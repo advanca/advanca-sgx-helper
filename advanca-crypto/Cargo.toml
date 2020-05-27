@@ -1,0 +1,30 @@
+[package]
+name = "advanca-crypto"
+version = "0.1.0"
+authors = ["Chua Zheng Leong <czl@iiyume.org>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default      = []
+sgx_enclave  = ["sgx_tkey_exchange", "sgx_tstd"]
+untrusted    = ["sgx_support", "ring_support", "aes_support", "std_env", "aas_support", "sgx_ucrypto"]
+
+sgx_support  = ["std_env"]
+ring_support = ["ring", "std_env"]
+aes_support  = ["aes", "cmac", "std_env"]
+aas_support  = ["std_env", "ring_support"]
+std_env      = ["advanca-crypto-types", "rand"]
+
+[dependencies]
+advanca-crypto-ctypes = { path = "../advanca-crypto-ctypes" }
+sgx_types             = { git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+sgx_tkey_exchange     = { optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+ring                  = { optional = true, version = "0.16.13" }
+advanca-crypto-types  = { optional = true, path = "../advanca-crypto-types" }
+cmac                  = { optional = true, version = "0.2.0" }
+aes                   = { optional = true, version = "0.3.2" }
+rand                  = { optional = true, version = "0.7.3" }
+sgx_tstd              = { optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+sgx_ucrypto           = { optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git"}
