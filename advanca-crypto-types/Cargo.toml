@@ -8,10 +8,32 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default         = ["untrusted"]
+untrusted       = ["ring_support", "aes_support", "std_env"]
+sgx_enclave     = ["sgx_serde_dep", "sgx_tstd"]
+ring_support    = ["ring", "std_env"]
+aes_support     = ["aes", "cmac", "std_env"]
+std_env         = ["serde_dep"]
+
+serde_dep       = ["serde", "serde_json", "serde-big-array"]
+sgx_serde_dep   = ["serde-sgx", "serde_json-sgx", "serde-big-array-sgx"]
+
+
 [dependencies]
-serde                 = { version = "1.0", features = ["derive"] }
-serde_json            = { version = "1.0" }
-serde-big-array       = { version = "0.3.0" }
-advanca-crypto-ctypes = { path = "../advanca-crypto-ctypes" }
+sgx_types             = { rev = "v1.1.2", git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+
+sgx_tstd              = { optional = true, rev = "v1.1.2", git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+
+serde                 = { optional = true, version = "1.0", features = ["derive"] }
+serde_json            = { optional = true, version = "1.0" }
+serde-big-array       = { optional = true, version = "0.3.0" }
+serde-sgx             = { optional = true, package = "serde", git = "https://github.com/mesalock-linux/serde-sgx", features = ["derive"] }
+serde_json-sgx        = { optional = true, package = "serde_json", git = "https://github.com/mesalock-linux/serde-json-sgx" }
+serde-big-array-sgx   = { optional = true, package = "serde-big-array", git = "https://github.com/mesalock-linux/serde-big-array-sgx" }
+
+ring                  = { optional = true, version = "0.16.13" }
+cmac                  = { optional = true, version = "0.2.0" }
+aes                   = { optional = true, version = "0.3.2" }
 
 # [target.'cfg(not(features = "enclave"))'.dependencies]
