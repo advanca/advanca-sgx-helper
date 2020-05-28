@@ -7,6 +7,9 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "untrusted")]
 extern crate sgx_ucrypto;
 
+mod advanca_cryptolib;
+pub use advanca_cryptolib::*;
+
 
 //#[cfg(feature = "sgx_enclave")]
 pub mod sgx_enclave {
@@ -415,25 +418,25 @@ pub mod aas_utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use ring::signature::*;
-    use ring::rand::SystemRandom;
-    use ring::signature::{ECDSA_P256_SHA256_FIXED_SIGNING};
-
-
-    #[test]
-    fn ec256_signature_test() {
-        let rng = SystemRandom::new();
-        let pkcs8 = EcdsaKeyPair::generate_pkcs8(&ECDSA_P256_SHA256_FIXED_SIGNING, &rng).unwrap();
-        let pkcs8 = pkcs8.as_ref();
-        let keypair = EcdsaKeyPair::from_pkcs8(&ECDSA_P256_SHA256_FIXED_SIGNING, pkcs8).unwrap();
-        const MESSAGE: &[u8] = b"hello, world";
-        let sig = keypair.sign(&rng, MESSAGE).unwrap();
-        let sig_bytes = sig.as_ref();
-        println!("len: {:?}", sig_bytes.len());
-        println!("{:?}", sig_bytes);
-        let pubkey = keypair.public_key();
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use ring::signature::*;
+//     use ring::rand::SystemRandom;
+//     use ring::signature::{ECDSA_P256_SHA256_FIXED_SIGNING};
+// 
+// 
+//     #[test]
+//     fn ec256_signature_test() {
+//         let rng = SystemRandom::new();
+//         let pkcs8 = EcdsaKeyPair::generate_pkcs8(&ECDSA_P256_SHA256_FIXED_SIGNING, &rng).unwrap();
+//         let pkcs8 = pkcs8.as_ref();
+//         let keypair = EcdsaKeyPair::from_pkcs8(&ECDSA_P256_SHA256_FIXED_SIGNING, pkcs8).unwrap();
+//         const MESSAGE: &[u8] = b"hello, world";
+//         let sig = keypair.sign(&rng, MESSAGE).unwrap();
+//         let sig_bytes = sig.as_ref();
+//         println!("len: {:?}", sig_bytes.len());
+//         println!("{:?}", sig_bytes);
+//         let pubkey = keypair.public_key();
+//     }
+// }
 
