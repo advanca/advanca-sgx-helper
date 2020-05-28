@@ -7,15 +7,14 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default      = ["untrusted"]
-sgx_enclave  = ["sgx_tkey_exchange", "sgx_tstd", "advanca-crypto-types/sgx_enclave"]
-untrusted    = ["sgx_support", "ring_support", "aes_support", "std_env", "aas_support", "sgx_ucrypto", "advanca-crypto-types/untrusted"]
+default          = ["std_env"]
+sgx_enclave      = ["sgx_tkey_exchange", "sgx_tstd", "advanca-crypto-types/sgx_enclave"]
 
-sgx_support  = ["std_env"]
-ring_support = ["ring", "std_env"]
-aes_support  = ["aes", "cmac", "std_env"]
-aas_support  = ["std_env", "ring_support"]
-std_env      = ["rand"]
+sgx_support      = ["sgx_tcrypto"]
+ring_support     = ["ring", "std_env"]
+aes_support      = ["rand", "aes", "cmac", "std_env"]
+aas_support      = ["rand", "ring_support"]
+std_env          = ["sgx_support", "ring_support", "aes_support", "aas_support", "sgx_ucrypto", "advanca-crypto-types/std_env"]
 
 [dependencies]
 advanca-crypto-ctypes = { path = "../advanca-crypto-ctypes" }
@@ -28,3 +27,4 @@ aes                   = { optional = true, version = "0.3.2" }
 rand                  = { optional = true, version = "0.7.3" }
 sgx_tstd              = { optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git" }
 sgx_ucrypto           = { optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git"}
+sgx_tcrypto           = { optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git"}
