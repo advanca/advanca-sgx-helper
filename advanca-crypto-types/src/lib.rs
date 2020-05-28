@@ -4,16 +4,20 @@
 #[macro_use]
 extern crate sgx_tstd as std;
 
+#[cfg(feature = "std_env")]
+use serde as serde;
+#[cfg(feature = "std_env")]
+use serde_big_array as serde_big_array;
 
-#[cfg(feature = "std_env")]
+#[cfg(feature = "sgx_enclave")]
+use serde_sgx as serde;
+#[cfg(feature = "sgx_enclave")]
+use serde_big_array_sgx as serde_big_array;
+
 use serde::{Serialize, Deserialize};
-#[cfg(feature = "std_env")]
 use serde_big_array::big_array;
 
-#[cfg(feature = "sgx_enclave")]
-use serde_sgx::{Serialize, Deserialize};
-#[cfg(feature = "sgx_enclave")]
-use serde_big_array_sgx::big_array;
+use std::vec::Vec;
 
 #[cfg(feature = "ring_support")]
 use ring::signature::{self, Signature};
