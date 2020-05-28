@@ -10,11 +10,10 @@ edition = "2018"
 
 [features]
 default         = []
-untrusted       = ["ring_support", "aes_support", "std_env"]
 sgx_enclave     = ["sgx_serde_dep", "sgx_tstd"]
 ring_support    = ["ring", "std_env"]
 aes_support     = ["aes", "cmac", "std_env"]
-std_env         = ["serde_dep"]
+std_env         = ["serde_dep", "ring_support", "aes_support"]
 
 serde_dep       = ["serde", "serde_json", "serde-big-array"]
 sgx_serde_dep   = ["serde-sgx", "serde_json-sgx", "serde-big-array-sgx"]
