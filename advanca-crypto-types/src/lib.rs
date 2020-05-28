@@ -102,7 +102,7 @@ pub struct Secp256r1Signature {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Aes128Key {
     pub key: [u8; 16],
 }
@@ -124,6 +124,13 @@ pub struct Aes128EncryptedMsg {
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[derive(Serialize, Deserialize, Default, Debug)]
+pub struct Secp256r1SignedMsg {
+    pub msg: Vec<u8>,
+    pub signature: Secp256r1Signature,
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct AasRegReport {
     pub attested_time: u64,
     pub worker_pubkey: Secp256r1PublicKey,
@@ -138,10 +145,10 @@ impl Secp256r1PublicKey {
         }
     }
 
-    pub fn to_sgx_ec256_public(pubkey: &Secp256r1PublicKey) -> sgx_ec256_public_t {
+    pub fn to_sgx_ec256_public(&self) -> sgx_ec256_public_t {
         sgx_ec256_public_t {
-            gx: pubkey.gx,
-            gy: pubkey.gy,
+            gx: self.gx,
+            gy: self.gy,
         }
     }
 }
@@ -168,10 +175,10 @@ impl Secp256r1Signature {
         }
     }
 
-    pub fn to_sgx_ec256_signature(signature: &Secp256r1Signature) -> sgx_ec256_signature_t {
+    pub fn to_sgx_ec256_signature(&self) -> sgx_ec256_signature_t {
         sgx_ec256_signature_t {
-            x: unsafe{transmute::<[u8;32],[u32;8]>(signature.x)},
-            y: unsafe{transmute::<[u8;32],[u32;8]>(signature.y)},
+            x: unsafe{transmute::<[u8;32],[u32;8]>(self.x)},
+            y: unsafe{transmute::<[u8;32],[u32;8]>(self.y)},
         }
     }
 
