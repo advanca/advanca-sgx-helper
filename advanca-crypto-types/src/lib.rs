@@ -94,6 +94,27 @@ pub struct Secp256r1Signature {
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[derive(Serialize, Deserialize, Default, Debug)]
+pub struct Aes128Key {
+    pub key: [u8; 16],
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct Aes128Mac {
+    pub mac: [u8; 16],
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct Aes128EncryptedMsg {
+    pub iv: [u8; 16],
+    pub mac: Aes128Mac,
+    pub cipher: Vec<u8>,
+
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct AasRegReport {
     pub attested_time: u64,
     pub worker_pubkey: Secp256r1PublicKey,

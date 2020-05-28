@@ -9,7 +9,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default         = ["untrusted"]
+default         = []
 untrusted       = ["ring_support", "aes_support", "std_env"]
 sgx_enclave     = ["sgx_serde_dep", "sgx_tstd"]
 ring_support    = ["ring", "std_env"]
