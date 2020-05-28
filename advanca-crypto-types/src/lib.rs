@@ -18,6 +18,7 @@ use serde::{Serialize, Deserialize};
 use serde_big_array::big_array;
 
 use std::vec::Vec;
+use std::string::String;
 
 #[cfg(feature = "ring_support")]
 use ring::signature::{self, Signature};
@@ -36,13 +37,17 @@ big_array! { BigArray; }
 #[derive(Debug, Serialize, Deserialize)]
 pub enum CryptoError {
     InvalidMac,
+    SgxError(String),
 }
 
 impl fmt::Display for CryptoError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
+        match self {
             CryptoError::InvalidMac => {
                 write!(f, "mac verification failed!")
+            },
+            CryptoError::SgxError(s) => {
+                write!(f, "{}", s)
             },
         }
     }
@@ -111,7 +116,7 @@ pub struct Aes128Mac {
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Aes128EncryptedMsg {
-    pub iv: [u8; 16],
+    pub iv: [u8; 12],
     pub mac: Aes128Mac,
     pub cipher: Vec<u8>,
 
