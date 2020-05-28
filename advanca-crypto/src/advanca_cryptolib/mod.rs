@@ -15,6 +15,19 @@ use sgx_types::*;
 
 use std::vec::Vec;
 
+macro_rules! handle_sgx {
+    ($expr:expr) => {
+        {
+            let s = $expr;
+            if s != sgx_status_t::SGX_SUCCESS {
+                Err(CryptoError::SgxError(format!("{}", s)))
+            } else {
+                Ok(())
+            }
+        }
+    };
+}
+
 pub fn aes128cmac_mac(p_key: &Aes128Key, p_data: &[u8]) -> Result<Aes128Mac, CryptoError> {
     match rsgx_rijndael128_cmac_slice(&p_key.key, p_data) {
         Ok(mac) => {
@@ -38,10 +51,9 @@ pub fn aes128gcm_encrypt(p_key: &Aes128Key, p_data: &[u8]) -> Result<Aes128Encry
     let mut mac = [0_u8; 16];
     let mut cipher = vec![0_u8; p_data.len()];
 
-    let s = unsafe {sgx_read_rand(iv.as_mut_ptr(), iv.len())};
-    if s != sgx_status_t::SGX_SUCCESS {
-        return Err(CryptoError::SgxError(format!("{}", s)));
-    };
+    unsafe{
+        handle_sgx!(sgx_read_rand(iv.as_mut_ptr(), iv.len()))?;
+    }
     if let Err(s) = rsgx_rijndael128GCM_encrypt(&p_key.key, p_data, &iv, &[], &mut cipher[..], &mut mac) {
         return Err(CryptoError::SgxError(format!("{}", s)));
     };
@@ -66,6 +78,87 @@ pub fn aes128gcm_decrypt(p_key: &Aes128Key, p_encrypted_msg: &Aes128EncryptedMsg
     Ok ( plaintext )
 }
 
+pub fn secp256r1_gen_keypair() -> Result<(Secp256r1PrivateKey, Secp256r1PublicKey), CryptoError> {
+    // generate secp256r1 keypair for communication with worker
+    let mut sgx_pubkey = sgx_ec256_public_t::default();
+    let mut sgx_prvkey = sgx_ec256_private_t::default();
+    let mut ecc_handle: sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
+
+    unsafe {
+        handle_sgx!(sgx_ecc256_open_context(&mut ecc_handle))?;
+        handle_sgx!(sgx_ecc256_create_key_pair(&mut sgx_prvkey, &mut sgx_pubkey, ecc_handle))?;
+        handle_sgx!(sgx_ecc256_close_context(ecc_handle))?;
+    }
+    let prvkey = Secp256r1PrivateKey::from_sgx_ec256_private(&sgx_prvkey);
+    let pubkey = Secp256r1PublicKey::from_sgx_ec256_public(&sgx_pubkey);
+    Ok((prvkey, pubkey))
+}
+
+fn secp256r1_compute_shared_dhkey(prvkey: &Secp256r1PrivateKey, pubkey: &Secp256r1PublicKey) -> Result<[u8;32], CryptoError> {
+    let mut sgx_prvkey = prvkey.to_sgx_ec256_private();
+    let mut sgx_pubkey = pubkey.to_sgx_ec256_public();
+    let mut gab_x = sgx_ec256_dh_shared_t::default();
+    let mut ecc_handle: sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
+
+    unsafe {
+        handle_sgx!(sgx_ecc256_open_context(&mut ecc_handle))?;
+        handle_sgx!(sgx_ecc256_compute_shared_dhkey(&mut sgx_prvkey, &mut sgx_pubkey, &mut gab_x, ecc_handle))?;
+        handle_sgx!(sgx_ecc256_close_context(ecc_handle))?;
+    }
+    Ok(gab_x.s)
+}
+
+pub fn derive_kdk(prvkey: &Secp256r1PrivateKey, pubkey: &Secp256r1PublicKey) -> Result<Aes128Key, CryptoError> {
+    let shared_dhkey = secp256r1_compute_shared_dhkey(prvkey, pubkey)?;
+    let key0 = Aes128Key {
+        key:[0;16],
+    };
+
+    let mac = aes128cmac_mac(&key0, &shared_dhkey)?;
+    Ok(Aes128Key {
+        key: mac.mac,
+    })
+}
+
+pub fn secp256r1_sign_msg(prvkey: &Secp256r1PrivateKey, msg: &[u8]) -> Result<Secp256r1SignedMsg, CryptoError> {
+    let mut sgx_prvkey = prvkey.to_sgx_ec256_private();
+    let mut ecc_handle: sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
+    let mut signature = sgx_ec256_signature_t::default();
+
+    unsafe {
+        handle_sgx!(sgx_ecc256_open_context(&mut ecc_handle))?;
+        handle_sgx!(sgx_ecdsa_sign(msg.as_ptr(), msg.len() as u32, &mut sgx_prvkey, &mut signature, ecc_handle))?;
+        handle_sgx!(sgx_ecc256_close_context(ecc_handle))?;
+    }
+
+    Ok(Secp256r1SignedMsg {
+        msg: msg.to_vec(),
+        signature: Secp256r1Signature::from_sgx_ec256_signature(signature),
+    })
+}
+
+pub fn secp256r1_verify_msg(pubkey: &Secp256r1PublicKey, signed_msg: &Secp256r1SignedMsg) -> Result<bool, CryptoError> {
+    let sgx_pubkey = pubkey.to_sgx_ec256_public();
+    let mut ecc_handle: sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
+
+    let p_msg = signed_msg.msg.as_ptr();
+    let msg_size = signed_msg.msg.len() as u32;
+    let mut sgx_signature = signed_msg.signature.to_sgx_ec256_signature();
+    let mut result = 0;
+
+    unsafe {
+        handle_sgx!(sgx_ecc256_open_context(&mut ecc_handle))?;
+        handle_sgx!(sgx_ecdsa_verify(p_msg, msg_size, &sgx_pubkey, &mut sgx_signature, &mut result, ecc_handle))?;
+        handle_sgx!(sgx_ecc256_close_context(ecc_handle))?;
+    }
+    let result = sgx_generic_ecresult_t::from_repr(result as u32).unwrap();
+    match result {
+        sgx_generic_ecresult_t::SGX_EC_VALID             => Ok(true),
+        sgx_generic_ecresult_t::SGX_EC_INVALID_SIGNATURE => Ok(false),
+        e                                                => panic!("Unexpected ECC Result! {:?} (Refer to sgx_generic_ecresult_t)", e.from_key()),
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -78,9 +171,7 @@ mod tests {
         };
         let data: [u8;6] = [1,2,3,4,5,6];
         let encrypted_msg = aes128gcm_encrypt(&key, &data).unwrap();
-        println!("{:?}", encrypted_msg);
         let plaintext = aes128gcm_decrypt(&key, &encrypted_msg).unwrap();
-        println!("{:?}", plaintext);
         assert_eq!(plaintext, data);
     }
 
@@ -96,6 +187,29 @@ mod tests {
         data[1] = 3;
         assert_eq!(false, aes128cmac_verify(&key, &data, &data_mac).unwrap());
     }
+
+    #[test]
+    fn derive_shared_secrets() {
+        let (prvkey1, pubkey1) = secp256r1_gen_keypair().unwrap();
+        let (prvkey2, pubkey2) = secp256r1_gen_keypair().unwrap();
+        let kdk1 = derive_kdk(&prvkey1, &pubkey2).unwrap();
+        let kdk2 = derive_kdk(&prvkey2, &pubkey1).unwrap();
+        assert_eq!(kdk1, kdk2);
+    }
+
+    #[test]
+    fn sign_verify() {
+        let (prvkey1, pubkey1) = secp256r1_gen_keypair().unwrap();
+        let (prvkey2, pubkey2) = secp256r1_gen_keypair().unwrap();
+        let msg = [1,2,3,4,5,6];
+        let mut signed_msg = secp256r1_sign_msg(&prvkey1, &msg).unwrap();
+        assert_eq!(true, secp256r1_verify_msg(&pubkey1, &signed_msg).unwrap());
+        assert_eq!(false, secp256r1_verify_msg(&pubkey2, &signed_msg).unwrap());
+        signed_msg.msg[3] = 10;
+        assert_eq!(false, secp256r1_verify_msg(&pubkey1, &signed_msg).unwrap());
+        assert_eq!(false, secp256r1_verify_msg(&pubkey2, &signed_msg).unwrap());
+    }
+
 }
 
 
