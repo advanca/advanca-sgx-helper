@@ -20,6 +20,9 @@ use serde_big_array::big_array;
 use std::vec::Vec;
 use std::string::String;
 
+#[cfg(feature = "openssl_support")]
+use openssl::ec::EcKey;
+
 #[cfg(feature = "ring_support")]
 use ring::signature::{self, Signature};
 #[cfg(feature = "ring_support")]
@@ -181,6 +184,14 @@ impl AasRegReport {
 }
 
 impl Aes128Key {
+    pub fn from_slice(byte_slice: &[u8]) -> Aes128Key {
+        let mut buf = [0_u8;16];
+        buf.copy_from_slice(byte_slice);
+        Aes128Key {
+            key: buf,
+        }
+    }
+
     pub fn to_raw_bytes(&self) -> [u8;16] {
         self.key
     }
@@ -213,9 +224,43 @@ impl Secp256r1PublicKey {
         bytes[32..].copy_from_slice(&self.gy);
         bytes
     }
+
+    #[cfg(feature = "ring_support")]
+    pub fn to_ring_agreement_key(&self) -> agreement::UnparsedPublicKey<Vec<u8>> {
+        let buf = self.to_ring_bytes();
+        agreement::UnparsedPublicKey::new(&agreement::ECDH_P256, buf.to_vec())
+    }
+
+    #[cfg(feature = "ring_support")]
+    pub fn to_ring_signature_key(&self) -> signature::UnparsedPublicKey<Vec<u8>> {
+        let buf = self.to_ring_bytes();
+        signature::UnparsedPublicKey::new(&signature::ECDSA_P256_SHA256_FIXED, buf.to_vec())
+    }
+
+    pub fn to_ring_bytes(&self) -> [u8;65] {
+        let mut buf = [0_u8;65];
+        buf[0] = 4;
+        buf[1..33].copy_from_slice(&self.gx);
+        buf[1..33].reverse();
+        buf[33..].copy_from_slice(&self.gy);
+        buf[33..].reverse();
+        buf
+    }
 }
 
 impl Secp256r1PrivateKey {
+    #[cfg(feature = "openssl_support")]
+    pub fn from_der(der_bytes: &[u8]) -> Secp256r1PrivateKey {
+        let eckey = EcKey::private_key_from_der(der_bytes).unwrap();
+        let mut seed = [0_u8; 32];
+        seed.copy_from_slice(eckey.private_key().to_vec().as_slice());
+        seed.reverse();
+
+        Secp256r1PrivateKey {
+            r: seed,
+        }
+    }
+
     pub fn from_sgx_ec256_private(key: &sgx_ec256_private_t) -> Secp256r1PrivateKey {
         Secp256r1PrivateKey {
             r: key.r,

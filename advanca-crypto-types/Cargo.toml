@@ -12,8 +12,9 @@ edition = "2018"
 default         = []
 
 sgx_enclave     = ["sgx_serde_dep", "sgx_tstd"]
-std_env         = ["serde_dep", "ring_support", "aes_support"]
+std_env         = ["serde_dep", "openssl_support", "aes_support"]
 
+openssl_support = ["openssl"]
 ring_support    = ["ring"]
 aes_support     = ["aes", "cmac"]
 
@@ -33,6 +34,7 @@ serde-sgx             = { optional = true, package = "serde", git = "https://git
 serde_json-sgx        = { optional = true, package = "serde_json", git = "https://github.com/mesalock-linux/serde-json-sgx" }
 serde-big-array-sgx   = { optional = true, package = "serde-big-array", git = "https://github.com/mesalock-linux/serde-big-array-sgx" }
 
+openssl               = { optional = true, version = "0.10.29" }
 ring                  = { optional = true, version = "0.16.13" }
 cmac                  = { optional = true, version = "0.2.0" }
 aes                   = { optional = true, version = "0.3.2" }
