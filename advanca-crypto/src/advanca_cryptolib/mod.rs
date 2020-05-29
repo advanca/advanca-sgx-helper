@@ -138,17 +138,18 @@ pub fn secp256r1_sign_msg(prvkey: &Secp256r1PrivateKey, msg: &[u8]) -> Result<Se
 }
 
 pub fn secp256r1_verify_msg(pubkey: &Secp256r1PublicKey, signed_msg: &Secp256r1SignedMsg) -> Result<bool, CryptoError> {
-    let sgx_pubkey = pubkey.to_sgx_ec256_public();
-    let mut ecc_handle: sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
+    secp256r1_verify_signature(pubkey, &signed_msg.msg, &signed_msg.signature)
+}
 
-    let p_msg = signed_msg.msg.as_ptr();
-    let msg_size = signed_msg.msg.len() as u32;
-    let mut sgx_signature = signed_msg.signature.to_sgx_ec256_signature();
+pub fn secp256r1_verify_signature(pubkey: &Secp256r1PublicKey, msg: &[u8], signature: &Secp256r1Signature) -> Result<bool, CryptoError> {
+    let sgx_pubkey = pubkey.to_sgx_ec256_public();
+    let mut sgx_signature = signature.to_sgx_ec256_signature();
+    let mut ecc_handle: sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
     let mut result = 0;
 
     unsafe {
         handle_sgx!(sgx_ecc256_open_context(&mut ecc_handle))?;
-        handle_sgx!(sgx_ecdsa_verify(p_msg, msg_size, &sgx_pubkey, &mut sgx_signature, &mut result, ecc_handle))?;
+        handle_sgx!(sgx_ecdsa_verify(msg.as_ptr(), msg.len() as u32, &sgx_pubkey, &mut sgx_signature, &mut result, ecc_handle))?;
         handle_sgx!(sgx_ecc256_close_context(ecc_handle))?;
     }
     let result = sgx_generic_ecresult_t::from_repr(result as u32).unwrap();
@@ -157,6 +158,27 @@ pub fn secp256r1_verify_msg(pubkey: &Secp256r1PublicKey, signed_msg: &Secp256r1S
         sgx_generic_ecresult_t::SGX_EC_INVALID_SIGNATURE => Ok(false),
         e                                                => panic!("Unexpected ECC Result! {:?} (Refer to sgx_generic_ecresult_t)", e.from_key()),
     }
+}
+
+pub fn aas_verify_reg_request(key: &Aes128Key, reg_request: &AasRegRequest) -> Result<bool, CryptoError> {
+    let reg_request_bytes = reg_request.to_check_bytes();
+    let reg_request_mac = aes128cmac_mac(key, &reg_request_bytes)?;
+    Ok(reg_request_mac == reg_request.mac)
+}
+
+pub fn aas_verify_reg_report(pubkey: &Secp256r1PublicKey, reg_report: &AasRegReport) -> Result<bool, CryptoError> {
+    let reg_report_bytes = reg_report.to_check_bytes();
+    secp256r1_verify_signature(pubkey, &reg_report_bytes, &reg_report.aas_signature)
+}
+
+pub fn aas_sign_reg_report(prvkey: &Secp256r1PrivateKey, reg_report: AasRegReport) -> Result<AasRegReport, CryptoError> {
+    let reg_report_bytes = reg_report.to_check_bytes();
+    let signed_msg = secp256r1_sign_msg(prvkey, &reg_report_bytes)?;
+    Ok(AasRegReport {
+        attested_time: reg_report.attested_time,
+        worker_pubkey: reg_report.worker_pubkey,
+        aas_signature: signed_msg.signature,
+    })
 }
 
 
@@ -200,7 +222,7 @@ mod tests {
     #[test]
     fn sign_verify() {
         let (prvkey1, pubkey1) = secp256r1_gen_keypair().unwrap();
-        let (prvkey2, pubkey2) = secp256r1_gen_keypair().unwrap();
+        let (_prvkey2, pubkey2) = secp256r1_gen_keypair().unwrap();
         let msg = [1,2,3,4,5,6];
         let mut signed_msg = secp256r1_sign_msg(&prvkey1, &msg).unwrap();
         assert_eq!(true, secp256r1_verify_msg(&pubkey1, &signed_msg).unwrap());
