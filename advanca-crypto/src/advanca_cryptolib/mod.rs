@@ -185,6 +185,7 @@ pub fn aas_sign_reg_report(prvkey: &Secp256r1PrivateKey, reg_report: AasRegRepor
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[test]
     fn encrypt_decrypt() {
@@ -230,6 +231,13 @@ mod tests {
         signed_msg.msg[3] = 10;
         assert_eq!(false, secp256r1_verify_msg(&pubkey1, &signed_msg).unwrap());
         assert_eq!(false, secp256r1_verify_msg(&pubkey2, &signed_msg).unwrap());
+    }
+
+    #[test]
+    fn secp256r1_from_der_test() {
+        let aas_prvkey_der_bytes = fs::read("sp_prv.der").unwrap();
+        let prvkey = Secp256r1PrivateKey::from_der(&aas_prvkey_der_bytes);
+        println!("{:x?}", prvkey);
     }
 
 }
