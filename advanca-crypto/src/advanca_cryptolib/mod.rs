@@ -15,18 +15,7 @@ use sgx_types::*;
 
 use std::vec::Vec;
 
-macro_rules! handle_sgx {
-    ($expr:expr) => {
-        {
-            let s = $expr;
-            if s != sgx_status_t::SGX_SUCCESS {
-                Err(CryptoError::SgxError(format!("{}", s)))
-            } else {
-                Ok(())
-            }
-        }
-    };
-}
+use advanca_macros::handle_sgx;
 
 pub fn aes128cmac_mac(p_key: &Aes128Key, p_data: &[u8]) -> Result<Aes128Mac, CryptoError> {
     match rsgx_rijndael128_cmac_slice(&p_key.key, p_data) {
