@@ -40,7 +40,7 @@ big_array! { BigArray; }
 #[derive(Debug, Serialize, Deserialize)]
 pub enum CryptoError {
     InvalidMac,
-    SgxError(String),
+    SgxError((u32, String)),
 }
 
 impl fmt::Display for CryptoError {
@@ -49,8 +49,8 @@ impl fmt::Display for CryptoError {
             CryptoError::InvalidMac => {
                 write!(f, "mac verification failed!")
             },
-            CryptoError::SgxError(s) => {
-                write!(f, "{}", s)
+            CryptoError::SgxError((i,s)) => {
+                write!(f, "{}: {}", i, s)
             },
         }
     }
