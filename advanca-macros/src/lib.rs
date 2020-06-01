@@ -9,7 +9,7 @@ macro_rules! handle_sgx {
         {
             let s = $expr;
             if s != sgx_status_t::SGX_SUCCESS {
-                Err(CryptoError::SgxError(format!("{}", s)))
+                Err(CryptoError::SgxError((s.from_key(), format!("{}", s))))
             } else {
                 Ok(())
             }
