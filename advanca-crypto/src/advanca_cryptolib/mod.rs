@@ -25,7 +25,7 @@ pub fn aes128cmac_mac(p_key: &Aes128Key, p_data: &[u8]) -> Result<Aes128Mac, Cry
             })
         },
         Err(s)  => {
-            Err(CryptoError::SgxError(format!("{}", s)))
+            Err(CryptoError::SgxError((s.from_key(), format!("{}", s))))
         },
     }
 }
@@ -44,7 +44,7 @@ pub fn aes128gcm_encrypt(p_key: &Aes128Key, p_data: &[u8]) -> Result<Aes128Encry
         handle_sgx!(sgx_read_rand(iv.as_mut_ptr(), iv.len()))?;
     }
     if let Err(s) = rsgx_rijndael128GCM_encrypt(&p_key.key, p_data, &iv, &[], &mut cipher[..], &mut mac) {
-        return Err(CryptoError::SgxError(format!("{}", s)));
+        return Err(CryptoError::SgxError((s.from_key(), format!("{}", s))))
     };
 
     Ok (Aes128EncryptedMsg {
@@ -61,7 +61,7 @@ pub fn aes128gcm_decrypt(p_key: &Aes128Key, p_encrypted_msg: &Aes128EncryptedMsg
     let mut plaintext = vec![0_u8; p_encrypted_msg.cipher.len()];
 
     if let Err(s) = rsgx_rijndael128GCM_decrypt(&p_key.key, p_cipher, p_iv, &[], p_mac, &mut plaintext[..]) {
-        return Err(CryptoError::SgxError(format!("{}", s)));
+        return Err(CryptoError::SgxError((s.from_key(), format!("{}", s))));
     }
 
     Ok ( plaintext )
