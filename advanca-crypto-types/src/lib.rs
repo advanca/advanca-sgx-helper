@@ -1,7 +1,22 @@
+// Copyright (C) 2020 ADVANCA PTE. LTD.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 use serde;
 use serde_big_array;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_big_array::big_array;
 
 use std::error::Error;
@@ -17,9 +32,7 @@ pub enum CryptoError {
 impl fmt::Display for CryptoError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            CryptoError::InvalidMac => {
-                write!(f, "mac verification failed!")
-            },
+            CryptoError::InvalidMac => write!(f, "mac verification failed!"),
         }
     }
 }
@@ -32,8 +45,8 @@ impl Error for CryptoError {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct EphemeralKey {
-    pub pubkey    : Secp256r1PublicKey,
-    pub signature : Secp256r1Signature,
+    pub pubkey: Secp256r1PublicKey,
+    pub signature: Secp256r1Signature,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -76,7 +89,7 @@ pub struct AasRegReport {
 impl Default for Rsa3072Signature {
     fn default() -> Self {
         Rsa3072Signature {
-            signature: [0;384],
+            signature: [0; 384],
         }
     }
 }
@@ -84,7 +97,7 @@ impl Default for Rsa3072Signature {
 impl Default for Rsa3072PublicKey {
     fn default() -> Self {
         Rsa3072PublicKey {
-            modulus: [0;384],
+            modulus: [0; 384],
             exponent: [0; 4],
         }
     }
@@ -96,7 +109,7 @@ impl Default for Rsa3072PublicKey {
 //     #[serde(with = "BigArray")]
 //     signature: [u8; 384],
 // }
-// 
+//
 // #[derive(Serialize, Deserialize)]
 // #[serde(remote = "sgx_rsa3072_public_key_t")]
 // struct _SgxRsa3072PublicKey {

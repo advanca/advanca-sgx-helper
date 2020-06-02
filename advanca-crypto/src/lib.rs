@@ -1,3 +1,18 @@
+// Copyright (C) 2020 ADVANCA PTE. LTD.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #![cfg_attr(any(feature = "sgx_enclave"), no_std)]
 
 #[cfg(feature = "sgx_enclave")]
@@ -7,26 +22,32 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "untrusted")]
 extern crate sgx_ucrypto;
 
-
 //#[cfg(feature = "sgx_enclave")]
 pub mod sgx_enclave {
     pub mod sgx_enclave_utils {
-        use sgx_types::*;
         use sgx_types::sgx_ra_key_type_t::*;
-
+        use sgx_types::*;
 
         // TODO: Change functions to return Result instead of using a mutable output parameter
-        pub fn aes128_cmac(key: &sgx_cmac_128bit_key_t, p_data: &[u8], p_mac: &mut sgx_cmac_128bit_tag_t) -> sgx_status_t {
+        pub fn aes128_cmac(
+            key: &sgx_cmac_128bit_key_t,
+            p_data: &[u8],
+            p_mac: &mut sgx_cmac_128bit_tag_t,
+        ) -> sgx_status_t {
             // derive the kdk from the shared dhkey
             // KDK = AES-CMAC(key0, gab x-coordinate)
             let src_len = p_data.len() as u32;
-            unsafe {sgx_rijndael128_cmac_msg(key, p_data.as_ptr(), src_len, p_mac)}
+            unsafe { sgx_rijndael128_cmac_msg(key, p_data.as_ptr(), src_len, p_mac) }
         }
 
         // TODO: Change functions to return Result instead of using a mutable output parameter
-        pub fn aes128_cmac_sk(context: sgx_ra_context_t, p_data: &[u8], p_mac: &mut sgx_cmac_128bit_tag_t) -> sgx_status_t {
+        pub fn aes128_cmac_sk(
+            context: sgx_ra_context_t,
+            p_data: &[u8],
+            p_mac: &mut sgx_cmac_128bit_tag_t,
+        ) -> sgx_status_t {
             let mut key = sgx_cmac_128bit_key_t::default();
-            let ret = unsafe {sgx_ra_get_keys(context, SGX_RA_KEY_SK, &mut key)};
+            let ret = unsafe { sgx_ra_get_keys(context, SGX_RA_KEY_SK, &mut key) };
             if ret == sgx_status_t::SGX_SUCCESS {
                 aes128_cmac(&key, p_data, p_mac);
             };
@@ -34,99 +55,156 @@ pub mod sgx_enclave {
         }
 
         // TODO: Change functions to return Result instead of using a mutable output parameter
-        pub fn derive_ec256_shared_dhkey (pubkey: &sgx_ec256_public_t, prvkey: &sgx_ec256_private_t, shared_dhkey: &mut sgx_ec256_dh_shared_t) -> sgx_status_t {
+        pub fn derive_ec256_shared_dhkey(
+            pubkey: &sgx_ec256_public_t,
+            prvkey: &sgx_ec256_private_t,
+            shared_dhkey: &mut sgx_ec256_dh_shared_t,
+        ) -> sgx_status_t {
             let mut g_a_pub = *pubkey;
             let mut g_b_prv = *prvkey;
             let mut gab_x = sgx_ec256_dh_shared_t::default();
 
-            let mut p_ecc_handle:sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
+            let mut p_ecc_handle: sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
 
             let mut ret;
-            ret = unsafe {sgx_ecc256_open_context(&mut p_ecc_handle)};
+            ret = unsafe { sgx_ecc256_open_context(&mut p_ecc_handle) };
             if ret == sgx_status_t::SGX_SUCCESS {
-                ret = unsafe {sgx_ecc256_compute_shared_dhkey(&mut g_b_prv, &mut g_a_pub, &mut gab_x, p_ecc_handle)};
+                ret = unsafe {
+                    sgx_ecc256_compute_shared_dhkey(
+                        &mut g_b_prv,
+                        &mut g_a_pub,
+                        &mut gab_x,
+                        p_ecc_handle,
+                    )
+                };
             }
             if ret == sgx_status_t::SGX_SUCCESS {
-                let _ = unsafe {sgx_ecc256_close_context(p_ecc_handle)};
+                let _ = unsafe { sgx_ecc256_close_context(p_ecc_handle) };
             }
             *shared_dhkey = gab_x;
             ret
-
         }
 
+        pub fn aes128_gcm_decrypt(
+            p_key: &sgx_aes_gcm_128bit_key_t,
+            p_ivcipher: &[u8],
+            p_aad: &[u8],
+            p_data: &mut [u8],
+        ) -> sgx_status_t {
+            assert_eq!(p_ivcipher.len(), 12 + 16 + p_data.len());
 
-        pub fn aes128_gcm_decrypt(p_key: &sgx_aes_gcm_128bit_key_t, p_ivcipher: &[u8], p_aad: &[u8], p_data: &mut [u8]) -> sgx_status_t {
-            assert_eq!(p_ivcipher.len(), 12+16+p_data.len());
+            let p_iv = unsafe { core::slice::from_raw_parts(p_ivcipher.as_ptr(), 12) };
+            let p_mac = unsafe {
+                p_ivcipher.as_ptr().offset(12) as *const u8 as *const sgx_aes_gcm_128bit_tag_t
+            };
+            let p_cipher = unsafe {
+                core::slice::from_raw_parts(p_ivcipher.as_ptr().offset(12 + 16), p_data.len())
+            };
 
-            let p_iv = unsafe{core::slice::from_raw_parts(p_ivcipher.as_ptr(), 12)};
-            let p_mac = unsafe{p_ivcipher.as_ptr().offset(12) as *const u8 as *const sgx_aes_gcm_128bit_tag_t};
-            let p_cipher = unsafe{core::slice::from_raw_parts(p_ivcipher.as_ptr().offset(12+16), p_data.len())};
-
-            let ret = unsafe{sgx_rijndael128GCM_decrypt(
-                p_key, p_cipher.as_ptr(), p_cipher.len() as u32, p_data.as_mut_ptr(),
-                p_iv.as_ptr(), p_iv.len() as u32, p_aad.as_ptr(), p_aad.len() as u32, p_mac,
-            )};
+            let ret = unsafe {
+                sgx_rijndael128GCM_decrypt(
+                    p_key,
+                    p_cipher.as_ptr(),
+                    p_cipher.len() as u32,
+                    p_data.as_mut_ptr(),
+                    p_iv.as_ptr(),
+                    p_iv.len() as u32,
+                    p_aad.as_ptr(),
+                    p_aad.len() as u32,
+                    p_mac,
+                )
+            };
             ret
         }
 
-        pub fn aes128_gcm_encrypt(p_key: &sgx_aes_gcm_128bit_key_t, p_data: &[u8], p_aad: &[u8], p_out: &mut [u8]) -> sgx_status_t {
-            assert_eq!(p_data.len()+12+16, p_out.len());
+        pub fn aes128_gcm_encrypt(
+            p_key: &sgx_aes_gcm_128bit_key_t,
+            p_data: &[u8],
+            p_aad: &[u8],
+            p_out: &mut [u8],
+        ) -> sgx_status_t {
+            assert_eq!(p_data.len() + 12 + 16, p_out.len());
 
-            let p_iv = unsafe{core::slice::from_raw_parts_mut(p_out.as_mut_ptr(), 12)};
-            let p_mac = unsafe{core::slice::from_raw_parts_mut(p_out.as_mut_ptr().offset(12), 16)};
-            let p_cipher = unsafe{core::slice::from_raw_parts_mut(p_out.as_mut_ptr().offset(12+16), p_data.len())};
+            let p_iv = unsafe { core::slice::from_raw_parts_mut(p_out.as_mut_ptr(), 12) };
+            let p_mac =
+                unsafe { core::slice::from_raw_parts_mut(p_out.as_mut_ptr().offset(12), 16) };
+            let p_cipher = unsafe {
+                core::slice::from_raw_parts_mut(p_out.as_mut_ptr().offset(12 + 16), p_data.len())
+            };
 
-            let ret = unsafe{sgx_read_rand(p_iv.as_mut_ptr(), p_iv.len())};
-            if ret != sgx_status_t::SGX_SUCCESS { return ret; }
+            let ret = unsafe { sgx_read_rand(p_iv.as_mut_ptr(), p_iv.len()) };
+            if ret != sgx_status_t::SGX_SUCCESS {
+                return ret;
+            }
 
             let mut mac = sgx_aes_gcm_128bit_tag_t::default();
 
-            let ret = unsafe{sgx_rijndael128GCM_encrypt(
-                p_key, p_data.as_ptr(), p_data.len() as u32, p_cipher.as_mut_ptr(),
-                p_iv.as_ptr(), p_iv.len() as u32, p_aad.as_ptr(), p_aad.len() as u32, &mut mac,
-            )};
-            if ret == sgx_status_t::SGX_SUCCESS { p_mac.copy_from_slice(&mac); }
+            let ret = unsafe {
+                sgx_rijndael128GCM_encrypt(
+                    p_key,
+                    p_data.as_ptr(),
+                    p_data.len() as u32,
+                    p_cipher.as_mut_ptr(),
+                    p_iv.as_ptr(),
+                    p_iv.len() as u32,
+                    p_aad.as_ptr(),
+                    p_aad.len() as u32,
+                    &mut mac,
+                )
+            };
+            if ret == sgx_status_t::SGX_SUCCESS {
+                p_mac.copy_from_slice(&mac);
+            }
             ret
         }
     }
 
     pub mod ephemeral_key {
         use advanca_crypto_ctypes::CSgxEphemeralKey;
-        use sgx_types::*;
         use core::mem::size_of;
+        use sgx_types::*;
 
         pub fn verify(ephemeral: &CSgxEphemeralKey, pubkey: &sgx_ec256_public_t) -> bool {
-            let mut ecc_handle:sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
+            let mut ecc_handle: sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
             let p_data = &ephemeral.pubkey as *const sgx_ec256_public_t as *const u8;
             let data_size = size_of::<sgx_ec256_public_t>() as u32;
             let mut signature = ephemeral.signature;
-            let mut result:u8 = 0;
+            let mut result: u8 = 0;
 
-            let _ = unsafe {sgx_ecc256_open_context(&mut ecc_handle)};
-            let _ = unsafe {sgx_ecdsa_verify(p_data, data_size, pubkey, &mut signature, &mut result, ecc_handle)};
-            let _ = unsafe {sgx_ecc256_close_context(ecc_handle)};
+            let _ = unsafe { sgx_ecc256_open_context(&mut ecc_handle) };
+            let _ = unsafe {
+                sgx_ecdsa_verify(
+                    p_data,
+                    data_size,
+                    pubkey,
+                    &mut signature,
+                    &mut result,
+                    ecc_handle,
+                )
+            };
+            let _ = unsafe { sgx_ecc256_close_context(ecc_handle) };
 
             match sgx_generic_ecresult_t::from_repr(result as u32).unwrap() {
-                sgx_generic_ecresult_t::SGX_EC_VALID             => true,
+                sgx_generic_ecresult_t::SGX_EC_VALID => true,
                 sgx_generic_ecresult_t::SGX_EC_INVALID_SIGNATURE => false,
-                _ => panic!("sgx_ecdsa_verify: {} -- Unexpected value!", result)
+                _ => panic!("sgx_ecdsa_verify: {} -- Unexpected value!", result),
             }
         }
     }
 }
 
 pub mod secp256r1_signature {
-    #[cfg(feature = "sgx_support")]
-    pub use sgx_utils::*;
     #[cfg(feature = "ring_support")]
     pub use ring_utils::*;
+    #[cfg(feature = "sgx_support")]
+    pub use sgx_utils::*;
 
     #[cfg(feature = "std_env")]
     use advanca_crypto_types::*;
 
     #[cfg(feature = "std_env")]
-    pub fn to_bytes(signature: &Secp256r1Signature) -> [u8;64] {
-        let mut bytes = [0_u8;64];
+    pub fn to_bytes(signature: &Secp256r1Signature) -> [u8; 64] {
+        let mut bytes = [0_u8; 64];
         bytes[..32].copy_from_slice(&signature.x);
         bytes[32..].copy_from_slice(&signature.y);
         bytes
@@ -134,20 +212,20 @@ pub mod secp256r1_signature {
 
     #[cfg(feature = "sgx_support")]
     pub mod sgx_utils {
-        use core::mem::{transmute};
         use advanca_crypto_types::Secp256r1Signature;
+        use core::mem::transmute;
         use sgx_types::*;
         pub fn to_sgx_ec256_signature(signature: &Secp256r1Signature) -> sgx_ec256_signature_t {
             sgx_ec256_signature_t {
-                x: unsafe{transmute::<[u8;32],[u32;8]>(signature.x)},
-                y: unsafe{transmute::<[u8;32],[u32;8]>(signature.y)},
+                x: unsafe { transmute::<[u8; 32], [u32; 8]>(signature.x) },
+                y: unsafe { transmute::<[u8; 32], [u32; 8]>(signature.y) },
             }
         }
 
         pub fn from_sgx_ec256_signature(sig: sgx_ec256_signature_t) -> Secp256r1Signature {
             Secp256r1Signature {
-                x: unsafe{transmute::<[u32;8],[u8;32]>(sig.x)},
-                y: unsafe{transmute::<[u32;8],[u8;32]>(sig.y)},
+                x: unsafe { transmute::<[u32; 8], [u8; 32]>(sig.x) },
+                y: unsafe { transmute::<[u32; 8], [u8; 32]>(sig.y) },
             }
         }
     }
@@ -161,20 +239,17 @@ pub mod secp256r1_signature {
             let ring_sig_buf = ring_sig.as_ref();
             assert_eq!(ring_sig_buf.len(), 64);
 
-            let mut x: [u8;32] = [0;32];
-            let mut y: [u8;32] = [0;32];
+            let mut x: [u8; 32] = [0; 32];
+            let mut y: [u8; 32] = [0; 32];
             x.copy_from_slice(&ring_sig_buf[..32]);
             y.copy_from_slice(&ring_sig_buf[32..]);
             x.reverse();
             y.reverse();
-            Secp256r1Signature {
-                x: x,
-                y: y,
-            }
+            Secp256r1Signature { x: x, y: y }
         }
 
-        pub fn to_ring_signature_bytes(adv_sig: &Secp256r1Signature) -> [u8;64] {
-            let mut temp_buf: [u8;64] = [0;64];
+        pub fn to_ring_signature_bytes(adv_sig: &Secp256r1Signature) -> [u8; 64] {
+            let mut temp_buf: [u8; 64] = [0; 64];
             temp_buf[..32].copy_from_slice(&adv_sig.x);
             temp_buf[32..].copy_from_slice(&adv_sig.y);
             temp_buf[..32].reverse();
@@ -185,10 +260,10 @@ pub mod secp256r1_signature {
 }
 
 pub mod secp256r1_public {
-    #[cfg(feature = "sgx_support")]
-    pub use sgx_utils::*;
     #[cfg(feature = "ring_support")]
     pub use ring_utils::*;
+    #[cfg(feature = "sgx_support")]
+    pub use sgx_utils::*;
 
     #[cfg(feature = "std_env")]
     use advanca_crypto_types::*;
@@ -214,8 +289,8 @@ pub mod secp256r1_public {
     }
 
     #[cfg(feature = "std_env")]
-    pub fn to_bytes(pubkey: &Secp256r1PublicKey) -> [u8;64] {
-        let mut bytes = [0_u8;64];
+    pub fn to_bytes(pubkey: &Secp256r1PublicKey) -> [u8; 64] {
+        let mut bytes = [0_u8; 64];
         bytes[..32].copy_from_slice(&pubkey.gx);
         bytes[32..].copy_from_slice(&pubkey.gy);
         bytes
@@ -224,11 +299,13 @@ pub mod secp256r1_public {
     #[cfg(feature = "ring_support")]
     mod ring_utils {
         use advanca_crypto_types::*;
-        use ring::{agreement, signature};
         use ring::agreement::ECDH_P256;
-        use ring::signature::{ECDSA_P256_SHA256_FIXED};
+        use ring::signature::ECDSA_P256_SHA256_FIXED;
+        use ring::{agreement, signature};
 
-        pub fn to_ring_agreementkey(pubkey: &Secp256r1PublicKey) -> agreement::UnparsedPublicKey<Vec<u8>> {
+        pub fn to_ring_agreementkey(
+            pubkey: &Secp256r1PublicKey,
+        ) -> agreement::UnparsedPublicKey<Vec<u8>> {
             let mut buf = vec![0_u8; 65];
             let mut gx_be = pubkey.gx;
             let mut gy_be = pubkey.gy;
@@ -242,7 +319,9 @@ pub mod secp256r1_public {
             agreement::UnparsedPublicKey::new(&ECDH_P256, buf)
         }
 
-        pub fn to_ring_signaturekey(pubkey: &Secp256r1PublicKey) -> signature::UnparsedPublicKey<Vec<u8>> {
+        pub fn to_ring_signaturekey(
+            pubkey: &Secp256r1PublicKey,
+        ) -> signature::UnparsedPublicKey<Vec<u8>> {
             let mut buf = vec![0_u8; 65];
             let mut gx_be = pubkey.gx;
             let mut gy_be = pubkey.gy;
@@ -316,10 +395,10 @@ pub mod sgx_ephemeral_key {
 
     #[cfg(feature = "sgx_support")]
     pub mod sgx_utils {
-        use advanca_crypto_types::EphemeralKey;
-        use advanca_crypto_ctypes::CSgxEphemeralKey;
         use crate::secp256r1_public;
         use crate::secp256r1_signature;
+        use advanca_crypto_ctypes::CSgxEphemeralKey;
+        use advanca_crypto_types::EphemeralKey;
 
         pub fn to_sgx(ephemeral: &EphemeralKey) -> CSgxEphemeralKey {
             CSgxEphemeralKey {
@@ -332,23 +411,23 @@ pub mod sgx_ephemeral_key {
 
 #[cfg(feature = "aes_support")]
 pub mod aes_utils {
-    use cmac::{Cmac, Mac};
     use aes::Aes128;
+    use cmac::{Cmac, Mac};
 
-    pub fn aes128_cmac_mac(key: &[u8;16], data: &[u8]) -> [u8; 16] {
+    pub fn aes128_cmac_mac(key: &[u8; 16], data: &[u8]) -> [u8; 16] {
         let mut cmac = Cmac::<Aes128>::new_varkey(key).unwrap();
         cmac.input(data);
         let temp_result = cmac.result().code();
-        let mut result = [0_u8;16];
+        let mut result = [0_u8; 16];
         result.copy_from_slice(temp_result.as_slice());
         result
     }
 
-    pub fn aes128_cmac_verify(key: &[u8;16], data: &[u8], mac: &[u8;16]) -> bool {
+    pub fn aes128_cmac_verify(key: &[u8; 16], data: &[u8], mac: &[u8; 16]) -> bool {
         let mut cmac = Cmac::<Aes128>::new_varkey(key).unwrap();
         cmac.input(data);
         match cmac.verify(mac) {
-            Ok(_)  => true,
+            Ok(_) => true,
             Err(_) => false,
         }
     }
@@ -356,21 +435,21 @@ pub mod aes_utils {
 
 #[cfg(feature = "aas_support")]
 pub mod aas_utils {
+    use crate::{secp256r1_public, secp256r1_signature};
     use advanca_crypto_types::{AasRegReport, Secp256r1PublicKey};
-    use ring::signature::EcdsaKeyPair;
     use ring::rand::SystemRandom;
-    use crate::{secp256r1_signature, secp256r1_public};
+    use ring::signature::EcdsaKeyPair;
 
     mod aas_reg_report {
+        use crate::{secp256r1_public, secp256r1_signature};
         use advanca_crypto_types::AasRegReport;
-        use crate::{secp256r1_signature, secp256r1_public};
 
-        pub fn to_bytes(aas_reg_report: &AasRegReport) -> [u8;136] {
+        pub fn to_bytes(aas_reg_report: &AasRegReport) -> [u8; 136] {
             // (8)   - attested_time: u64
             // (64)  - worker_pubkey: Secp256r1PublicKey
             // (64)  - aas_signature: Secp256t1Signature
             // (136) - total size of data
-            let mut bytes = [0_u8;136];
+            let mut bytes = [0_u8; 136];
             let worker_pubkey_buf = secp256r1_public::to_bytes(&aas_reg_report.worker_pubkey);
             let aas_signature_buf = secp256r1_signature::to_bytes(&aas_reg_report.aas_signature);
             bytes[..8].copy_from_slice(&aas_reg_report.attested_time.to_le_bytes());
@@ -380,24 +459,27 @@ pub mod aas_utils {
         }
     }
 
-    pub fn verify_aas_reg_report (reg_report: &AasRegReport, aas_pubkey: &Secp256r1PublicKey) -> bool {
+    pub fn verify_aas_reg_report(
+        reg_report: &AasRegReport,
+        aas_pubkey: &Secp256r1PublicKey,
+    ) -> bool {
         let aas_pubkey_ring = secp256r1_public::to_ring_signaturekey(&aas_pubkey);
         let aas_report_buf = aas_reg_report::to_bytes(&reg_report);
-        let aas_report_sig = secp256r1_signature::to_ring_signature_bytes(&reg_report.aas_signature);
+        let aas_report_sig =
+            secp256r1_signature::to_ring_signature_bytes(&reg_report.aas_signature);
         // we'll verify the signature over attested_time and worker_pubkey
         match aas_pubkey_ring.verify(&aas_report_buf[..72], &aas_report_sig) {
             Ok(_) => true,
             Err(e) => {
                 println!("{:?}", e);
                 false
-            },
+            }
         }
-
     }
 
     // TODO: Change the signing of the aas reg report to use Secp256r1PrivateKey
     // this is a quick hack... we'll directly use a ring ecdsakeypair here first
-    pub fn sign_aas_reg_report (report: AasRegReport, signing_key: &EcdsaKeyPair) -> AasRegReport {
+    pub fn sign_aas_reg_report(report: AasRegReport, signing_key: &EcdsaKeyPair) -> AasRegReport {
         let rng = SystemRandom::new();
         // create the data buffer...
         // length of the data buffer is 8bytes(time u64) + 64bytes(ec256 public key)
@@ -417,10 +499,9 @@ pub mod aas_utils {
 
 #[cfg(test)]
 mod tests {
-    use ring::signature::*;
     use ring::rand::SystemRandom;
-    use ring::signature::{ECDSA_P256_SHA256_FIXED_SIGNING};
-
+    use ring::signature::ECDSA_P256_SHA256_FIXED_SIGNING;
+    use ring::signature::*;
 
     #[test]
     fn ec256_signature_test() {
@@ -436,4 +517,3 @@ mod tests {
         let pubkey = keypair.public_key();
     }
 }
-
