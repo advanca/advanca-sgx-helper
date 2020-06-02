@@ -27,5 +27,4 @@ strum         = "0.18.0"
 strum_macros  = "0.18.0"
 advanca-crypto        = { path = "../advanca-crypto", features = ["std_env"] }
 advanca-crypto-types  = { path = "../advanca-crypto-types" }
-advanca-crypto-ctypes = { path = "../advanca-crypto-ctypes" }
 hex           = "0.4.2"
