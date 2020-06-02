@@ -16,7 +16,7 @@
 use serde;
 use serde_big_array;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_big_array::big_array;
 
 use std::error::Error;
@@ -32,9 +32,7 @@ pub enum CryptoError {
 impl fmt::Display for CryptoError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            CryptoError::InvalidMac => {
-                write!(f, "mac verification failed!")
-            },
+            CryptoError::InvalidMac => write!(f, "mac verification failed!"),
         }
     }
 }
@@ -47,8 +45,8 @@ impl Error for CryptoError {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct EphemeralKey {
-    pub pubkey    : Secp256r1PublicKey,
-    pub signature : Secp256r1Signature,
+    pub pubkey: Secp256r1PublicKey,
+    pub signature: Secp256r1Signature,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -91,7 +89,7 @@ pub struct AasRegReport {
 impl Default for Rsa3072Signature {
     fn default() -> Self {
         Rsa3072Signature {
-            signature: [0;384],
+            signature: [0; 384],
         }
     }
 }
@@ -99,7 +97,7 @@ impl Default for Rsa3072Signature {
 impl Default for Rsa3072PublicKey {
     fn default() -> Self {
         Rsa3072PublicKey {
-            modulus: [0;384],
+            modulus: [0; 384],
             exponent: [0; 4],
         }
     }
@@ -111,7 +109,7 @@ impl Default for Rsa3072PublicKey {
 //     #[serde(with = "BigArray")]
 //     signature: [u8; 384],
 // }
-// 
+//
 // #[derive(Serialize, Deserialize)]
 // #[serde(remote = "sgx_rsa3072_public_key_t")]
 // struct _SgxRsa3072PublicKey {

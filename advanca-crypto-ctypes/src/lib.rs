@@ -35,6 +35,6 @@ pub struct CAasRegRequest {
 #[derive(Default, Copy, Clone)]
 #[repr(C)]
 pub struct CAes128GcmMessage {
-    pub iv     : [u8;12],
-    pub cipher : [u8;0],
+    pub iv: [u8; 12],
+    pub cipher: [u8; 0],
 }
