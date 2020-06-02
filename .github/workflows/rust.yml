@@ -28,5 +28,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: install stable toolchain and other components
       uses: actions-rs/toolchain@v1.0.5
+      with:
+        toolchain: stable
+        profile: minimal
     - name: run unit test
       run: cargo test --all
