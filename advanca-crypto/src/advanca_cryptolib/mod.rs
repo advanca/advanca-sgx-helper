@@ -67,6 +67,17 @@ pub fn aes128gcm_decrypt(p_key: &Aes128Key, p_encrypted_msg: &Aes128EncryptedMsg
     Ok ( plaintext )
 }
 
+#[cfg(feature = "sgx_enclave")]
+pub fn enclave_get_sk_key(ra_context: sgx_ra_context_t) -> Result<Aes128Key, CryptoError> {
+    let mut key = sgx_key_128bit_t::default();
+    unsafe{
+        handle_sgx!(sgx_ra_get_keys(ra_context, sgx_ra_key_type_t::SGX_RA_KEY_SK, &mut key))?;
+    };
+    Ok (Aes128Key {
+        key: key,
+    })
+}
+
 pub fn secp256r1_gen_keypair() -> Result<(Secp256r1PrivateKey, Secp256r1PublicKey), CryptoError> {
     // generate secp256r1 keypair for communication with worker
     let mut sgx_pubkey = sgx_ec256_public_t::default();

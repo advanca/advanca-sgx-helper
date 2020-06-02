@@ -18,7 +18,6 @@ std_env          = ["ring_support", "aes_support", "aas_support", "sgx_ucrypto",
 [dependencies]
 advanca-macros        = { optional = true, path = "../advanca-macros" }
 advanca-crypto-types  = { optional = true, path = "../advanca-crypto-types" }
-advanca-crypto-ctypes = { path = "../advanca-crypto-ctypes" }
 sgx_types             = { rev = "v1.1.2", git = "https://github.com/apache/teaclave-sgx-sdk.git" }
 sgx_tkey_exchange     = { rev = "v1.1.2", optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git" }
 ring                  = { optional = true, version = "0.16.13" }
