@@ -28,6 +28,9 @@ macro_rules! enclave_ret {
             obj.serialize(&mut ser).unwrap();
             let writer = ser.into_inner();
             *$bufsize = writer.bytes_written();
+            // let obj_bytes = serde_cbor::to_vec(&obj).unwrap();
+            // buf_slice[..obj_bytes.len()].copy_from_slice(&obj_bytes);
+            // *$bufsize = obj_bytes.len();
         }
     }
 }
@@ -48,17 +51,17 @@ macro_rules! enclave_cryptoerr {
 
 #[macro_export]
 macro_rules! handle_ecall {
-    ($eid:expr, $func_name:ident $($args:tt),*) => {
+    ($eid:expr, $func_name:ident ($($args:expr),*)) => {
         {
             let mut ret = sgx_status_t::SGX_SUCCESS;
-            let ecall_ret = $func_name($eid, &mut retval, $($args),*);
+            let ecall_ret = $func_name($eid, &mut ret, $($args),*);
             if ecall_ret != sgx_status_t::SGX_SUCCESS {
                 Err(CryptoError::SgxError(ecall_ret.from_key(), format!("{}", ecall_ret)))
-            }
-            if ret != sgx_status_t::SGX_SUCCESS {
+            } else if ret != sgx_status_t::SGX_SUCCESS {
                 Err(CryptoError::SgxError(ret.from_key(), format!("{}", ret)))
+            } else {
+                Ok(())
             }
-            Ok(())
         }
     }
 }

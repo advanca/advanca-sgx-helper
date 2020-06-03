@@ -165,14 +165,14 @@ impl AasRegRequest {
 }
 
 impl AasRegReport {
-    // attested_time     - 4
+    // attested_time     - 8
     // worker_pubkey     - 64
     // aas_signature     - 64
-    pub fn to_raw_bytes(&self) -> [u8;132] {
-        let mut bytes = [0_u8; 132];
-        bytes[..4].copy_from_slice(&self.attested_time.to_le_bytes());
-        bytes[4..68].copy_from_slice(&self.worker_pubkey.to_raw_bytes());
-        bytes[68..].copy_from_slice(&self.aas_signature.to_raw_bytes());
+    pub fn to_raw_bytes(&self) -> [u8;136] {
+        let mut bytes = [0_u8; 136];
+        bytes[..8].copy_from_slice(&self.attested_time.to_le_bytes());
+        bytes[8..72].copy_from_slice(&self.worker_pubkey.to_raw_bytes());
+        bytes[72..].copy_from_slice(&self.aas_signature.to_raw_bytes());
         bytes
     }
 
