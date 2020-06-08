@@ -1,3 +1,18 @@
+// Copyright (C) 2020 ADVANCA PTE. LTD.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 pub mod ias;
 
 // TODO: Maybe we want to change this to no_std
@@ -5,10 +20,10 @@ pub mod ias;
 pub use crate::sgx_ra::*;
 
 mod sgx_ra {
-    use memoffset::offset_of;
     use core::mem::{size_of, transmute};
+    use log::debug;
+    use memoffset::offset_of;
     use sgx_types::*;
-    use log::{debug};
 
     use crate::ias;
 
@@ -52,13 +67,6 @@ mod sgx_ra {
         smk : Aes128Key,
         sk  : Aes128Key,
         mk  : Aes128Key,
-
-        // g_a : sgx_ec256_public_t,
-        // g_b : sgx_ec256_public_t,
-        // kdk : sgx_key_128bit_t,
-        // smk : sgx_key_128bit_t,
-        // sk  : sgx_key_128bit_t,
-        // mk  : sgx_key_128bit_t,
     }
 
     impl RaSession {
@@ -109,15 +117,15 @@ mod sgx_ra {
         spid.copy_from_slice(ias_spid);
         let ias_server = ias::IasServer::new(ias_apikey.trim(), is_dev);
         RaSession {
-            svr_ecdsa_key : keypair,
-            spid          : spid,
-            ias_server    : ias_server,
-            _session_state : SessionState::Init,
-            session_key   : SessionKeys::default(),
+            svr_ecdsa_key: keypair,
+            spid: spid,
+            ias_server: ias_server,
+            _session_state: SessionState::Init,
+            session_key: SessionKeys::default(),
         }
     }
 
-    pub fn sp_proc_ra_msg0 (msg0_buf: &[u8]) -> bool {
+    pub fn sp_proc_ra_msg0(msg0_buf: &[u8]) -> bool {
         if msg0_buf == 0_u32.to_le_bytes() {
             true
         } else {
@@ -125,11 +133,11 @@ mod sgx_ra {
         }
     }
 
-
-    pub fn sp_proc_ra_msg1 (msg1_slice: &[u8], session: &mut RaSession) -> Vec<u8> {
+    pub fn sp_proc_ra_msg1(msg1_slice: &[u8], session: &mut RaSession) -> Vec<u8> {
         let mut p_msg1_buf = [0_u8; size_of::<sgx_ra_msg1_t>()];
         p_msg1_buf.copy_from_slice(msg1_slice);
-        let p_msg1: sgx_ra_msg1_t = unsafe {transmute::<[u8; size_of::<sgx_ra_msg1_t>()], sgx_ra_msg1_t>(p_msg1_buf)};
+        let p_msg1: sgx_ra_msg1_t =
+            unsafe { transmute::<[u8; size_of::<sgx_ra_msg1_t>()], sgx_ra_msg1_t>(p_msg1_buf) };
         // generate our own ephemeral keys for ecdh agreement
         let (prvkey, pubkey) = secp256r1_gen_keypair().unwrap();
         let g_b = pubkey;
@@ -188,7 +196,12 @@ mod sgx_ra {
         // create the buffer for the full msg2 object
         let full_msg2_size = size_of::<sgx_ra_msg2_t>() + p_msg2.sig_rl_size as usize;
         let mut msg2_buf = vec![0; full_msg2_size];
-        let msg2_slice = unsafe{core::slice::from_raw_parts(&p_msg2 as *const sgx_ra_msg2_t as *const u8, size_of::<sgx_ra_msg2_t>())};
+        let msg2_slice = unsafe {
+            core::slice::from_raw_parts(
+                &p_msg2 as *const sgx_ra_msg2_t as *const u8,
+                size_of::<sgx_ra_msg2_t>(),
+            )
+        };
         msg2_buf[..size_of::<sgx_ra_msg2_t>()].copy_from_slice(msg2_slice);
         msg2_buf[size_of::<sgx_ra_msg2_t>()..].copy_from_slice(sigrl.as_slice());
         msg2_buf
@@ -246,14 +259,15 @@ mod sgx_ra {
             // Create a buffer for safety and copy quote object into it
             let mut quote_bytes: Vec<u8> = vec![0; quote_size];
             let msg3_bytes_ptr = msg3_bytes.as_ptr();
-            let quote_bytes_ptr = unsafe { msg3_bytes_ptr.offset(size_of::<sgx_ra_msg3_t>() as isize) };
-            let quote_slice = unsafe { core::slice::from_raw_parts(quote_bytes_ptr, quote_size) } ;
+            let quote_bytes_ptr =
+                unsafe { msg3_bytes_ptr.offset(size_of::<sgx_ra_msg3_t>() as isize) };
+            let quote_slice = unsafe { core::slice::from_raw_parts(quote_bytes_ptr, quote_size) };
             quote_bytes.copy_from_slice(quote_slice);
 
             // Try to instantiate SgxQuote object
             if let Some(quote) = SgxQuote::from_bytes(quote_bytes) {
                 let msg3 = SgxRaMsg3 {
-                    raw_ra_msg3: unsafe{*(msg3_bytes_ptr as *const sgx_ra_msg3_t)},
+                    raw_ra_msg3: unsafe { *(msg3_bytes_ptr as *const sgx_ra_msg3_t) },
                     quote: quote,
                 };
                 Some(msg3)
@@ -266,48 +280,49 @@ mod sgx_ra {
             let msg3_size = size_of::<sgx_ra_msg3_t>() + self.quote.as_bytes().len();
             let mut msg3_bytes = vec![0_u8; msg3_size];
             let msg3_bytes_ptr = (&self.raw_ra_msg3 as *const sgx_ra_msg3_t) as *const u8;
-            let msg3_bytes_slice = unsafe{core::slice::from_raw_parts(msg3_bytes_ptr, size_of::<sgx_ra_msg3_t>())};
+            let msg3_bytes_slice =
+                unsafe { core::slice::from_raw_parts(msg3_bytes_ptr, size_of::<sgx_ra_msg3_t>()) };
             msg3_bytes[..size_of::<sgx_ra_msg3_t>()].copy_from_slice(msg3_bytes_slice);
-            msg3_bytes[size_of::<sgx_ra_msg3_t>()..].copy_from_slice(self.quote.as_bytes().as_slice());
+            msg3_bytes[size_of::<sgx_ra_msg3_t>()..]
+                .copy_from_slice(self.quote.as_bytes().as_slice());
             msg3_bytes
         }
-
     }
 
     impl SgxQuote {
-        pub fn get_report_body (&self) -> sgx_report_body_t {
+        pub fn get_report_body(&self) -> sgx_report_body_t {
             self.raw_quote.report_body
         }
 
-        pub fn get_mr_enclave (&self) -> [u8; 32] {
+        pub fn get_mr_enclave(&self) -> [u8; 32] {
             self.raw_quote.report_body.mr_enclave.m
         }
 
-        pub fn get_mr_signer (&self) -> [u8; 32] {
+        pub fn get_mr_signer(&self) -> [u8; 32] {
             self.raw_quote.report_body.mr_signer.m
         }
 
-        pub fn get_attributes (&self) -> sgx_attributes_t {
+        pub fn get_attributes(&self) -> sgx_attributes_t {
             self.raw_quote.report_body.attributes
         }
 
-        pub fn get_isv_prod_id (&self) -> sgx_prod_id_t {
+        pub fn get_isv_prod_id(&self) -> sgx_prod_id_t {
             self.raw_quote.report_body.isv_prod_id
         }
 
-        pub fn get_isv_svn (&self) -> sgx_isv_svn_t {
+        pub fn get_isv_svn(&self) -> sgx_isv_svn_t {
             self.raw_quote.report_body.isv_svn
         }
 
-        pub fn is_enclave_debug (&self) -> bool {
+        pub fn is_enclave_debug(&self) -> bool {
             self.raw_quote.report_body.attributes.flags & SGX_FLAGS_DEBUG != 0
         }
 
-        pub fn is_enclave_init (&self) -> bool {
+        pub fn is_enclave_init(&self) -> bool {
             self.raw_quote.report_body.attributes.flags & SGX_FLAGS_INITTED != 0
         }
 
-        pub fn from_isv_bytes (quote_bytes: Vec<u8>) -> Option<SgxQuote> {
+        pub fn from_isv_bytes(quote_bytes: Vec<u8>) -> Option<SgxQuote> {
             // Check that quote_bytes is sgx_quote_t up till report_body
             if offset_of!(sgx_quote_t, signature_len) != quote_bytes.len() {
                 return None;
@@ -315,7 +330,9 @@ mod sgx_ra {
             let mut raw_quote_buf = [0_u8; size_of::<sgx_quote_t>()];
             raw_quote_buf[..offset_of!(sgx_quote_t, signature_len)].copy_from_slice(&quote_bytes);
             let quote = SgxQuote {
-                raw_quote: unsafe {transmute::<[u8;size_of::<sgx_quote_t>()], sgx_quote_t>(raw_quote_buf)},
+                raw_quote: unsafe {
+                    transmute::<[u8; size_of::<sgx_quote_t>()], sgx_quote_t>(raw_quote_buf)
+                },
                 signature: Vec::new(),
             };
             Some(quote)
@@ -347,15 +364,14 @@ mod sgx_ra {
             let quote_size = size_of::<sgx_quote_t>() + self.signature.len();
             let mut quote_bytes = vec![0_u8; quote_size];
             let quote_bytes_ptr = (&self.raw_quote as *const sgx_quote_t) as *const u8;
-            let quote_bytes_slice = unsafe{core::slice::from_raw_parts(quote_bytes_ptr, size_of::<sgx_quote_t>())};
+            let quote_bytes_slice =
+                unsafe { core::slice::from_raw_parts(quote_bytes_ptr, size_of::<sgx_quote_t>()) };
             quote_bytes[..size_of::<sgx_quote_t>()].copy_from_slice(quote_bytes_slice);
             quote_bytes[size_of::<sgx_quote_t>()..].copy_from_slice(self.signature.as_slice());
             quote_bytes
         }
     }
 }
-
 #[cfg(test)]
 mod tests {
 }
-

@@ -1,3 +1,18 @@
+// Copyright (C) 2020 ADVANCA PTE. LTD.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #![cfg_attr(any(feature = "sgx_enclave"), no_std)]
 
 #[cfg(feature = "sgx_enclave")]
@@ -14,7 +29,7 @@ use serde_sgx as serde;
 #[cfg(feature = "sgx_enclave")]
 use serde_big_array_sgx as serde_big_array;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_big_array::big_array;
 
 use std::vec::Vec;
@@ -65,8 +80,8 @@ impl Error for CryptoError {
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
 pub struct EphemeralKey {
-    pub pubkey    : Secp256r1PublicKey,
-    pub signature : Secp256r1Signature,
+    pub pubkey: Secp256r1PublicKey,
+    pub signature: Secp256r1Signature,
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
@@ -332,7 +347,7 @@ impl Secp256r1Signature {
 impl Default for Rsa3072Signature {
     fn default() -> Self {
         Rsa3072Signature {
-            signature: [0;384],
+            signature: [0; 384],
         }
     }
 }
@@ -340,7 +355,7 @@ impl Default for Rsa3072Signature {
 impl Default for Rsa3072PublicKey {
     fn default() -> Self {
         Rsa3072PublicKey {
-            modulus: [0;384],
+            modulus: [0; 384],
             exponent: [0; 4],
         }
     }
@@ -352,7 +367,7 @@ impl Default for Rsa3072PublicKey {
 //     #[serde(with = "BigArray")]
 //     signature: [u8; 384],
 // }
-// 
+//
 // #[derive(Serialize, Deserialize)]
 // #[serde(remote = "sgx_rsa3072_public_key_t")]
 // struct _SgxRsa3072PublicKey {

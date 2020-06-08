@@ -1,3 +1,18 @@
+// Copyright (C) 2020 ADVANCA PTE. LTD.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #![cfg_attr(any(feature = "sgx_enclave"), no_std)]
 
 #[cfg(feature = "sgx_enclave")]
@@ -10,25 +25,3 @@ extern crate sgx_ucrypto;
 mod advanca_cryptolib;
 pub use advanca_cryptolib::*;
 
-
-//mod advanca_cryptolib_ring;
-//
-//#[cfg(test)]
-//mod tests {
-//    use crate::advanca_cryptolib_ring;
-//    use crate::advanca_cryptolib;
-//
-//    use advanca_cryptolib::secp256r1_gen_keypair;
-//    use advanca_cryptolib_ring::from_advanca_keypair;
-//
-//    // use ring::signature::*;
-//    // use ring::rand::SystemRandom;
-//    // use ring::signature::{ECDSA_P256_SHA256_FIXED_SIGNING};
-//
-//    #[test]
-//    fn ec256_signature_test() {
-//        let (prvkey, pubkey) = secp256r1_gen_keypair().unwrap();
-//        let ring_keypair = from_advanca_keypair(&prvkey, &pubkey);
-//        println!("{:?}", ring_keypair);
-//    }
-//}
