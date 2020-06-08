@@ -28,9 +28,6 @@ macro_rules! enclave_ret {
             obj.serialize(&mut ser).unwrap();
             let writer = ser.into_inner();
             *$bufsize = writer.bytes_written();
-            // let obj_bytes = serde_cbor::to_vec(&obj).unwrap();
-            // buf_slice[..obj_bytes.len()].copy_from_slice(&obj_bytes);
-            // *$bufsize = obj_bytes.len();
         }
     }
 }
