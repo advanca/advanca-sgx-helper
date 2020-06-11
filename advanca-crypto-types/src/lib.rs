@@ -20,33 +20,33 @@
 extern crate sgx_tstd as std;
 
 #[cfg(feature = "std_env")]
-use serde as serde;
+use serde;
 #[cfg(feature = "std_env")]
-use serde_big_array as serde_big_array;
+use serde_big_array;
 
 #[cfg(feature = "sgx_enclave")]
-use serde_sgx as serde;
-#[cfg(feature = "sgx_enclave")]
 use serde_big_array_sgx as serde_big_array;
+#[cfg(feature = "sgx_enclave")]
+use serde_sgx as serde;
 
 use serde::{Deserialize, Serialize};
 use serde_big_array::big_array;
 
-use std::vec::Vec;
 use std::string::String;
+use std::vec::Vec;
 
 #[cfg(feature = "openssl_support")]
 use openssl::ec::EcKey;
 
 #[cfg(feature = "ring_support")]
-use ring::signature::{self, Signature};
-#[cfg(feature = "ring_support")]
 use ring::agreement;
+#[cfg(feature = "ring_support")]
+use ring::signature::{self, Signature};
 
 use sgx_types::*;
 
-use core::mem::transmute;
 use core::fmt;
+use core::mem::transmute;
 use std::error::Error;
 
 big_array! { BigArray; }
@@ -61,12 +61,8 @@ pub enum CryptoError {
 impl fmt::Display for CryptoError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            CryptoError::InvalidMac => {
-                write!(f, "mac verification failed!")
-            },
-            CryptoError::SgxError(i,s) => {
-                write!(f, "{}: {}", i, s)
-            },
+            CryptoError::InvalidMac => write!(f, "mac verification failed!"),
+            CryptoError::SgxError(i, s) => write!(f, "{}: {}", i, s),
         }
     }
 }
@@ -78,7 +74,9 @@ impl Error for CryptoError {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
 pub struct EphemeralKey {
     pub pubkey: Secp256r1PublicKey,
     pub signature: Secp256r1Signature,
@@ -100,33 +98,43 @@ pub struct Rsa3072PublicKey {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
 pub struct Secp256r1PublicKey {
     pub gx: [u8; 32],
     pub gy: [u8; 32],
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
 pub struct Secp256r1PrivateKey {
     pub r: [u8; 32],
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
 pub struct Secp256r1Signature {
     pub x: [u8; 32],
     pub y: [u8; 32],
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
 pub struct Aes128Key {
     pub key: [u8; 16],
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
 pub struct Aes128Mac {
     pub mac: [u8; 16],
 }
@@ -137,7 +145,6 @@ pub struct Aes128EncryptedMsg {
     pub iv: [u8; 12],
     pub mac: Aes128Mac,
     pub cipher: Vec<u8>,
-
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
@@ -148,14 +155,18 @@ pub struct Secp256r1SignedMsg {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
 pub struct AasRegRequest {
     pub worker_pubkey: Secp256r1PublicKey,
     pub mac: Aes128Mac,
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
 pub struct AasRegReport {
     pub attested_time: u64,
     pub worker_pubkey: Secp256r1PublicKey,
@@ -165,15 +176,15 @@ pub struct AasRegReport {
 impl AasRegRequest {
     // worker_pubkey - 64
     // mac           - 16
-    pub fn to_raw_bytes(&self) -> [u8;80] {
+    pub fn to_raw_bytes(&self) -> [u8; 80] {
         let mut bytes = [0_u8; 80];
         bytes[..64].copy_from_slice(&self.worker_pubkey.to_raw_bytes());
         bytes[64..].copy_from_slice(&self.mac.to_raw_bytes());
         bytes
     }
 
-    pub fn to_check_bytes(&self) -> [u8;64] {
-        let mut bytes = [0_u8;64];
+    pub fn to_check_bytes(&self) -> [u8; 64] {
+        let mut bytes = [0_u8; 64];
         bytes.copy_from_slice(&self.to_raw_bytes()[..64]);
         bytes
     }
@@ -183,7 +194,7 @@ impl AasRegReport {
     // attested_time     - 8
     // worker_pubkey     - 64
     // aas_signature     - 64
-    pub fn to_raw_bytes(&self) -> [u8;136] {
+    pub fn to_raw_bytes(&self) -> [u8; 136] {
         let mut bytes = [0_u8; 136];
         bytes[..8].copy_from_slice(&self.attested_time.to_le_bytes());
         bytes[8..72].copy_from_slice(&self.worker_pubkey.to_raw_bytes());
@@ -191,8 +202,8 @@ impl AasRegReport {
         bytes
     }
 
-    pub fn to_check_bytes(&self) -> [u8;68] {
-        let mut bytes = [0_u8;68];
+    pub fn to_check_bytes(&self) -> [u8; 68] {
+        let mut bytes = [0_u8; 68];
         bytes.copy_from_slice(&self.to_raw_bytes()[..68]);
         bytes
     }
@@ -200,20 +211,18 @@ impl AasRegReport {
 
 impl Aes128Key {
     pub fn from_slice(byte_slice: &[u8]) -> Aes128Key {
-        let mut buf = [0_u8;16];
+        let mut buf = [0_u8; 16];
         buf.copy_from_slice(byte_slice);
-        Aes128Key {
-            key: buf,
-        }
+        Aes128Key { key: buf }
     }
 
-    pub fn to_raw_bytes(&self) -> [u8;16] {
+    pub fn to_raw_bytes(&self) -> [u8; 16] {
         self.key
     }
 }
 
 impl Aes128Mac {
-    pub fn to_raw_bytes(&self) -> [u8;16] {
+    pub fn to_raw_bytes(&self) -> [u8; 16] {
         self.mac
     }
 }
@@ -234,7 +243,7 @@ impl Secp256r1PublicKey {
     }
 
     pub fn to_raw_bytes(&self) -> [u8; 64] {
-        let mut bytes = [0_u8;64];
+        let mut bytes = [0_u8; 64];
         bytes[..32].copy_from_slice(&self.gx);
         bytes[32..].copy_from_slice(&self.gy);
         bytes
@@ -252,8 +261,8 @@ impl Secp256r1PublicKey {
         signature::UnparsedPublicKey::new(&signature::ECDSA_P256_SHA256_FIXED, buf.to_vec())
     }
 
-    pub fn to_ring_bytes(&self) -> [u8;65] {
-        let mut buf = [0_u8;65];
+    pub fn to_ring_bytes(&self) -> [u8; 65] {
+        let mut buf = [0_u8; 65];
         buf[0] = 4;
         buf[1..33].copy_from_slice(&self.gx);
         buf[1..33].reverse();
@@ -271,21 +280,15 @@ impl Secp256r1PrivateKey {
         seed.copy_from_slice(eckey.private_key().to_vec().as_slice());
         seed.reverse();
 
-        Secp256r1PrivateKey {
-            r: seed,
-        }
+        Secp256r1PrivateKey { r: seed }
     }
 
     pub fn from_sgx_ec256_private(key: &sgx_ec256_private_t) -> Secp256r1PrivateKey {
-        Secp256r1PrivateKey {
-            r: key.r,
-        }
+        Secp256r1PrivateKey { r: key.r }
     }
 
     pub fn to_sgx_ec256_private(&self) -> sgx_ec256_private_t {
-        sgx_ec256_private_t {
-            r: self.r,
-        }
+        sgx_ec256_private_t { r: self.r }
     }
 
     pub fn to_raw_bytes(&self) -> [u8; 32] {
@@ -298,15 +301,15 @@ impl Secp256r1PrivateKey {
 impl Secp256r1Signature {
     pub fn from_sgx_ec256_signature(sig: sgx_ec256_signature_t) -> Secp256r1Signature {
         Secp256r1Signature {
-            x: unsafe{transmute::<[u32;8],[u8;32]>(sig.x)},
-            y: unsafe{transmute::<[u32;8],[u8;32]>(sig.y)},
+            x: unsafe { transmute::<[u32; 8], [u8; 32]>(sig.x) },
+            y: unsafe { transmute::<[u32; 8], [u8; 32]>(sig.y) },
         }
     }
 
     pub fn to_sgx_ec256_signature(&self) -> sgx_ec256_signature_t {
         sgx_ec256_signature_t {
-            x: unsafe{transmute::<[u8;32],[u32;8]>(self.x)},
-            y: unsafe{transmute::<[u8;32],[u32;8]>(self.y)},
+            x: unsafe { transmute::<[u8; 32], [u32; 8]>(self.x) },
+            y: unsafe { transmute::<[u8; 32], [u32; 8]>(self.y) },
         }
     }
 
@@ -315,33 +318,30 @@ impl Secp256r1Signature {
         let ring_sig_buf = ring_sig.as_ref();
         assert_eq!(ring_sig_buf.len(), 64);
 
-        let mut x: [u8;32] = [0;32];
-        let mut y: [u8;32] = [0;32];
+        let mut x: [u8; 32] = [0; 32];
+        let mut y: [u8; 32] = [0; 32];
         x.copy_from_slice(&ring_sig_buf[..32]);
         y.copy_from_slice(&ring_sig_buf[32..]);
         x.reverse();
         y.reverse();
-        Secp256r1Signature {
-            x: x,
-            y: y,
-        }
+        Secp256r1Signature { x: x, y: y }
     }
 
-   pub fn to_ring_signature_bytes(&self) -> [u8;64] {
-       let mut temp_buf: [u8;64] = [0;64];
-       temp_buf[..32].copy_from_slice(&self.x);
-       temp_buf[32..].copy_from_slice(&self.y);
-       temp_buf[..32].reverse();
-       temp_buf[32..].reverse();
-       temp_buf
-   }
+    pub fn to_ring_signature_bytes(&self) -> [u8; 64] {
+        let mut temp_buf: [u8; 64] = [0; 64];
+        temp_buf[..32].copy_from_slice(&self.x);
+        temp_buf[32..].copy_from_slice(&self.y);
+        temp_buf[..32].reverse();
+        temp_buf[32..].reverse();
+        temp_buf
+    }
 
-   pub fn to_raw_bytes(&self) -> [u8;64] {
-       let mut bytes = [0_u8; 64];
-       bytes[..32].copy_from_slice(&self.x);
-       bytes[32..].copy_from_slice(&self.y);
-       bytes
-   }
+    pub fn to_raw_bytes(&self) -> [u8; 64] {
+        let mut bytes = [0_u8; 64];
+        bytes[..32].copy_from_slice(&self.x);
+        bytes[32..].copy_from_slice(&self.y);
+        bytes
+    }
 }
 
 impl Default for Rsa3072Signature {

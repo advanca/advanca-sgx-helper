@@ -24,4 +24,3 @@ extern crate sgx_ucrypto;
 
 mod advanca_cryptolib;
 pub use advanca_cryptolib::*;
-

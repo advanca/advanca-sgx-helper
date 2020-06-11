@@ -27,8 +27,8 @@ mod sgx_ra {
 
     use crate::ias;
 
-    use advanca_crypto_types::*;
     use advanca_crypto::*;
+    use advanca_crypto_types::*;
 
     pub struct SgxQuote {
         pub raw_quote: sgx_quote_t,
@@ -45,11 +45,11 @@ mod sgx_ra {
     }
 
     pub struct RaSession {
-        pub svr_ecdsa_key : Secp256r1PrivateKey,
-        spid          : [u8; 16],
-        ias_server    : ias::IasServer,
-        _session_state : SessionState,
-        session_key   : SessionKeys,
+        pub svr_ecdsa_key: Secp256r1PrivateKey,
+        spid: [u8; 16],
+        ias_server: ias::IasServer,
+        _session_state: SessionState,
+        session_key: SessionKeys,
     }
 
     enum SessionState {
@@ -61,12 +61,12 @@ mod sgx_ra {
 
     #[derive(Default)]
     struct SessionKeys {
-        g_a : Secp256r1PublicKey,
-        g_b : Secp256r1PublicKey,
-        kdk : Aes128Key,
-        smk : Aes128Key,
-        sk  : Aes128Key,
-        mk  : Aes128Key,
+        g_a: Secp256r1PublicKey,
+        g_b: Secp256r1PublicKey,
+        kdk: Aes128Key,
+        smk: Aes128Key,
+        sk: Aes128Key,
+        mk: Aes128Key,
     }
 
     impl RaSession {
@@ -75,33 +75,24 @@ mod sgx_ra {
         }
     }
 
-    /// Derive SMK, SK, MK, and VK according to 
+    /// Derive SMK, SK, MK, and VK according to
     /// https://software.intel.com/en-us/articles/code-sample-intel-software-guard-extensions-remote-attestation-end-to-end-example
     pub fn derive_secret_keys(kdk: &Aes128Key) -> (Aes128Key, Aes128Key, Aes128Key, Aes128Key) {
         let smk_data = [0x01, 'S' as u8, 'M' as u8, 'K' as u8, 0x00, 0x80, 0x00];
         let mac = aes128cmac_mac(kdk, &smk_data).unwrap();
-        let smk = Aes128Key {
-            key: mac.mac,
-        };
+        let smk = Aes128Key { key: mac.mac };
 
         let sk_data = [0x01, 'S' as u8, 'K' as u8, 0x00, 0x80, 0x00];
         let mac = aes128cmac_mac(kdk, &sk_data).unwrap();
-        let sk = Aes128Key {
-            key: mac.mac,
-        };
+        let sk = Aes128Key { key: mac.mac };
 
         let mk_data = [0x01, 'M' as u8, 'K' as u8, 0x00, 0x80, 0x00];
         let mac = aes128cmac_mac(kdk, &mk_data).unwrap();
-        let mk = Aes128Key {
-            key: mac.mac,
-        };
-
+        let mk = Aes128Key { key: mac.mac };
 
         let vk_data = [0x01, 'V' as u8, 'K' as u8, 0x00, 0x80, 0x00];
         let mac = aes128cmac_mac(kdk, &vk_data).unwrap();
-        let vk = Aes128Key {
-            key: mac.mac,
-        };
+        let vk = Aes128Key { key: mac.mac };
 
         debug!("smk: {:02x?}", smk);
         debug!("sk : {:02x?}", sk);
@@ -110,7 +101,12 @@ mod sgx_ra {
         (smk, sk, mk, vk)
     }
 
-    pub fn sp_init_ra (svr_ecdsa_key_der: &[u8], ias_spid: &[u8], ias_apikey: &str, is_dev: bool) -> RaSession {
+    pub fn sp_init_ra(
+        svr_ecdsa_key_der: &[u8],
+        ias_spid: &[u8],
+        ias_apikey: &str,
+        is_dev: bool,
+    ) -> RaSession {
         //let keypair = EcdsaKeyPair::from_pkcs8(&ECDSA_P256_SHA256_FIXED_SIGNING, svr_ecdsa_key_der).unwrap();
         let keypair = Secp256r1PrivateKey::from_der(svr_ecdsa_key_der);
         let mut spid = [0; 16];
@@ -148,11 +144,11 @@ mod sgx_ra {
         let (smk, sk, mk, _vk) = derive_secret_keys(&kdk);
         session.session_key.kdk = kdk;
         session.session_key.smk = smk;
-        session.session_key.sk  = sk;
-        session.session_key.mk  = mk;
+        session.session_key.sk = sk;
+        session.session_key.mk = mk;
 
         // get sign_gb_ga
-        let mut gb_ga: [u8;128] = [0;128];
+        let mut gb_ga: [u8; 128] = [0; 128];
         let gb_bytes = g_b.to_raw_bytes();
         let ga_bytes = g_a.to_raw_bytes();
         gb_ga[..64].copy_from_slice(&gb_bytes);
@@ -185,8 +181,14 @@ mod sgx_ra {
         // (remove) sig_rl_size: uint32_t
         // sig_rl: [uint8_t; 0]
         //
-        let p_msg2_slice_size = size_of::<sgx_ra_msg2_t>() - (size_of::<sgx_mac_t>() + size_of::<uint32_t>());
-        let p_msg2_bytes_slice = unsafe{core::slice::from_raw_parts(&p_msg2 as *const sgx_ra_msg2_t as *const u8, p_msg2_slice_size)};
+        let p_msg2_slice_size =
+            size_of::<sgx_ra_msg2_t>() - (size_of::<sgx_mac_t>() + size_of::<uint32_t>());
+        let p_msg2_bytes_slice = unsafe {
+            core::slice::from_raw_parts(
+                &p_msg2 as *const sgx_ra_msg2_t as *const u8,
+                p_msg2_slice_size,
+            )
+        };
         let mac = aes128cmac_mac(&session.session_key.smk, p_msg2_bytes_slice).unwrap();
         p_msg2.mac = mac.mac;
 
@@ -207,7 +209,10 @@ mod sgx_ra {
         msg2_buf
     }
 
-    pub fn sp_proc_ra_msg3 (msg3_slice: &[u8], session: &mut RaSession) -> Result<ias::IasReportResponse, CryptoError> {
+    pub fn sp_proc_ra_msg3(
+        msg3_slice: &[u8],
+        session: &mut RaSession,
+    ) -> Result<ias::IasReportResponse, CryptoError> {
         let msg3 = SgxRaMsg3::from_slice(msg3_slice).unwrap();
         // verify sgx_ra_msg3_t using derived smk as described in Intel's manual.
         if msg3.verify(&session.session_key.smk) {
@@ -218,14 +223,20 @@ mod sgx_ra {
         }
     }
 
-    pub fn sp_proc_aas_reg_request (reg_request: &AasRegRequest, session: &RaSession) -> Result<AasRegReport, CryptoError> {
+    pub fn sp_proc_aas_reg_request(
+        reg_request: &AasRegRequest,
+        session: &RaSession,
+    ) -> Result<AasRegReport, CryptoError> {
         let worker_mac = reg_request.mac;
         let data_slice = reg_request.to_check_bytes();
 
         let sk = session.session_key.sk;
         if aes128cmac_verify(&sk, &data_slice, &worker_mac)? {
             let mut result = AasRegReport::default();
-            result.attested_time = std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH).unwrap().as_secs();
+            result.attested_time = std::time::SystemTime::now()
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
             result.worker_pubkey = reg_request.worker_pubkey;
             aas_sign_reg_report(&session.svr_ecdsa_key, result)
         } else {
@@ -234,7 +245,7 @@ mod sgx_ra {
     }
 
     impl SgxRaMsg3 {
-        pub fn verify (&self, smk: &Aes128Key) -> bool {
+        pub fn verify(&self, smk: &Aes128Key) -> bool {
             let msg3_bytes = self.as_bytes();
             let msg3_content = msg3_bytes.get(size_of::<sgx_mac_t>()..).unwrap();
             let msg3_mac = Aes128Mac {
@@ -373,5 +384,4 @@ mod sgx_ra {
     }
 }
 #[cfg(test)]
-mod tests {
-}
+mod tests {}
