@@ -287,10 +287,10 @@ mod tests {
         assert_eq!(false, secp256r1_verify_msg(&pubkey2, &signed_msg).unwrap());
     }
 
-    #[test]
-    fn secp256r1_from_der_test() {
-        let aas_prvkey_der_bytes = fs::read("sp_prv.der").unwrap();
-        let prvkey = Secp256r1PrivateKey::from_der(&aas_prvkey_der_bytes);
-        println!("{:x?}", prvkey);
-    }
+    // #[test]
+    // fn secp256r1_from_der_test() {
+    //     let aas_prvkey_der_bytes = fs::read("sp_prv.der").unwrap();
+    //     let prvkey = Secp256r1PrivateKey::from_der(&aas_prvkey_der_bytes);
+    //     println!("{:x?}", prvkey);
+    // }
 }
