@@ -1,11 +1,14 @@
 [package]
-name = "advanca-crypto-ctypes"
+name = "advanca-proc-macros"
 version = "0.1.0"
 authors = ["Advanca Authors"]
 edition = "2018"
 license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+proc-macro = true
 
 [dependencies]
-sgx_types           = { git = "https://github.com/apache/teaclave-sgx-sdk.git" }
+syn = {version = "1.0.29", features = ["full", "extra-traits"]}
+quote = "1.0.6"

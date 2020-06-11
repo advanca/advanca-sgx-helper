@@ -25,22 +25,10 @@ mod sgx_ra {
     use memoffset::offset_of;
     use sgx_types::*;
 
-    use aes::Aes128;
-    use cmac::{Cmac, Mac};
-    use generic_array::GenericArray;
-    use typenum::U16;
-
-    use ring::signature::EcdsaKeyPair;
-    use ring::signature::ECDSA_P256_SHA256_FIXED_SIGNING;
-    use ring::{agreement, rand};
-
     use crate::ias;
 
     use advanca_crypto::*;
-    use advanca_crypto_ctypes::CAasRegRequest;
     use advanca_crypto_types::*;
-
-    type KeyType = GenericArray<u8, U16>;
 
     pub struct SgxQuote {
         pub raw_quote: sgx_quote_t,
@@ -57,7 +45,7 @@ mod sgx_ra {
     }
 
     pub struct RaSession {
-        svr_ecdsa_key: EcdsaKeyPair,
+        pub svr_ecdsa_key: Secp256r1PrivateKey,
         spid: [u8; 16],
         ias_server: ias::IasServer,
         _session_state: SessionState,
@@ -73,39 +61,38 @@ mod sgx_ra {
 
     #[derive(Default)]
     struct SessionKeys {
-        g_a: sgx_ec256_public_t,
-        g_b: sgx_ec256_public_t,
-        kdk: sgx_key_128bit_t,
-        smk: sgx_key_128bit_t,
-        sk: sgx_key_128bit_t,
-        mk: sgx_key_128bit_t,
+        g_a: Secp256r1PublicKey,
+        g_b: Secp256r1PublicKey,
+        kdk: Aes128Key,
+        smk: Aes128Key,
+        sk: Aes128Key,
+        mk: Aes128Key,
     }
 
     impl RaSession {
-        pub fn get_smk(&self) -> sgx_key_128bit_t {
+        pub fn get_smk(&self) -> Aes128Key {
             self.session_key.smk
         }
     }
 
     /// Derive SMK, SK, MK, and VK according to
     /// https://software.intel.com/en-us/articles/code-sample-intel-software-guard-extensions-remote-attestation-end-to-end-example
-    pub fn derive_secret_keys(kdk: &[u8]) -> (KeyType, KeyType, KeyType, KeyType) {
-        let mut mac = Cmac::<Aes128>::new_varkey(kdk).unwrap();
+    pub fn derive_secret_keys(kdk: &Aes128Key) -> (Aes128Key, Aes128Key, Aes128Key, Aes128Key) {
         let smk_data = [0x01, 'S' as u8, 'M' as u8, 'K' as u8, 0x00, 0x80, 0x00];
-        mac.input(&smk_data);
-        let smk = mac.result_reset().code();
+        let mac = aes128cmac_mac(kdk, &smk_data).unwrap();
+        let smk = Aes128Key { key: mac.mac };
 
         let sk_data = [0x01, 'S' as u8, 'K' as u8, 0x00, 0x80, 0x00];
-        mac.input(&sk_data);
-        let sk = mac.result_reset().code();
+        let mac = aes128cmac_mac(kdk, &sk_data).unwrap();
+        let sk = Aes128Key { key: mac.mac };
 
         let mk_data = [0x01, 'M' as u8, 'K' as u8, 0x00, 0x80, 0x00];
-        mac.input(&mk_data);
-        let mk = mac.result_reset().code();
+        let mac = aes128cmac_mac(kdk, &mk_data).unwrap();
+        let mk = Aes128Key { key: mac.mac };
 
         let vk_data = [0x01, 'V' as u8, 'K' as u8, 0x00, 0x80, 0x00];
-        mac.input(&vk_data);
-        let vk = mac.result_reset().code();
+        let mac = aes128cmac_mac(kdk, &vk_data).unwrap();
+        let vk = Aes128Key { key: mac.mac };
 
         debug!("smk: {:02x?}", smk);
         debug!("sk : {:02x?}", sk);
@@ -114,60 +101,14 @@ mod sgx_ra {
         (smk, sk, mk, vk)
     }
 
-    pub fn print_sgx_ec256_public_t(key: sgx_ec256_public_t) {
-        println!("gx: {:02x?}", key.gx);
-        println!("gy: {:02x?}", key.gy);
-    }
-
-    pub fn to_sgx_ec256_public_t(pubkey: agreement::PublicKey) -> sgx_ec256_public_t {
-        let pubkey_ref = pubkey.as_ref();
-
-        // the array is made of [4][gx][gy] where gx, gy are 32bytes each
-        assert_eq!(65, pubkey_ref.len());
-
-        // we only handle type 4 pubkeys.
-        let pubkey_type = pubkey_ref[0];
-        assert_eq!(4, pubkey_type);
-
-        let mut result = sgx_ec256_public_t::default();
-
-        // extract gx, gy
-        let gx_be = pubkey_ref.get(1..33).unwrap();
-        let gy_be = pubkey_ref.get(33..65).unwrap();
-
-        // for ring, gx, gy are in big-endian format
-        // for intel, gx, gy are in little-endian format
-        result.gx.copy_from_slice(gx_be);
-        result.gy.copy_from_slice(gy_be);
-
-        result.gx.reverse();
-        result.gy.reverse();
-
-        result
-    }
-
-    pub fn to_ring_publickey(pubkey: sgx_ec256_public_t) -> agreement::UnparsedPublicKey<Vec<u8>> {
-        let mut buf = vec![0_u8; 65];
-        let mut gx_be = pubkey.gx;
-        let mut gy_be = pubkey.gy;
-
-        gx_be.reverse();
-        gy_be.reverse();
-
-        buf[0] = 4;
-        buf[1..33].copy_from_slice(&gx_be);
-        buf[33..65].copy_from_slice(&gy_be);
-        agreement::UnparsedPublicKey::new(&agreement::ECDH_P256, buf)
-    }
-
     pub fn sp_init_ra(
         svr_ecdsa_key_der: &[u8],
         ias_spid: &[u8],
         ias_apikey: &str,
         is_dev: bool,
     ) -> RaSession {
-        let keypair =
-            EcdsaKeyPair::from_pkcs8(&ECDSA_P256_SHA256_FIXED_SIGNING, svr_ecdsa_key_der).unwrap();
+        //let keypair = EcdsaKeyPair::from_pkcs8(&ECDSA_P256_SHA256_FIXED_SIGNING, svr_ecdsa_key_der).unwrap();
+        let keypair = Secp256r1PrivateKey::from_der(svr_ecdsa_key_der);
         let mut spid = [0; 16];
         spid.copy_from_slice(ias_spid);
         let ias_server = ias::IasServer::new(ias_apikey.trim(), is_dev);
@@ -194,49 +135,22 @@ mod sgx_ra {
         let p_msg1: sgx_ra_msg1_t =
             unsafe { transmute::<[u8; size_of::<sgx_ra_msg1_t>()], sgx_ra_msg1_t>(p_msg1_buf) };
         // generate our own ephemeral keys for ecdh agreement
-        let rng = rand::SystemRandom::new();
-        let prv_key =
-            agreement::EphemeralPrivateKey::generate(&agreement::ECDH_P256, &rng).unwrap();
-        let pub_key = prv_key.compute_public_key().unwrap();
-        let pub_key_ref = pub_key.as_ref();
-        debug!("own public key:");
-        debug!("len of public key: {}", pub_key_ref.len());
-        let g_b = to_sgx_ec256_public_t(pub_key);
-        let g_a = p_msg1.g_a;
+        let (prvkey, pubkey) = secp256r1_gen_keypair().unwrap();
+        let g_b = pubkey;
+        let g_a = Secp256r1PublicKey::from_sgx_ec256_public(&p_msg1.g_a);
         session.session_key.g_a = g_a;
         session.session_key.g_b = g_b;
-        //print_sgx_ec256_public_t(g_b);
-        let g_a_ringpubkey = to_ring_publickey(p_msg1.g_a);
-        let kdk = agreement::agree_ephemeral(
-            prv_key,
-            &g_a_ringpubkey,
-            ring::error::Unspecified,
-            |gab_x| {
-                // agree_ephemeral outputs gab_x in big-endian format
-                // sgx dev ref 2.9.1 states in page 374 that aes-cmac(key0, le(gab_x))
-                let mut gab_x_le = [0_u8; 32];
-                gab_x_le.copy_from_slice(gab_x);
-                gab_x_le.reverse();
-                let mut mac = Cmac::<Aes128>::new_varkey(&[0_u8; 16]).unwrap();
-                mac.input(&gab_x_le);
-                let result = mac.result();
-                Ok(result.code())
-            },
-        )
-        .unwrap();
-        debug!("kdk: {:02x?}", kdk);
+        let kdk = derive_kdk(&prvkey, &g_a).unwrap();
         let (smk, sk, mk, _vk) = derive_secret_keys(&kdk);
-        session.session_key.kdk.copy_from_slice(&kdk);
-        session.session_key.smk.copy_from_slice(&smk);
-        session.session_key.sk.copy_from_slice(&sk);
-        session.session_key.mk.copy_from_slice(&mk);
+        session.session_key.kdk = kdk;
+        session.session_key.smk = smk;
+        session.session_key.sk = sk;
+        session.session_key.mk = mk;
 
         // get sign_gb_ga
         let mut gb_ga: [u8; 128] = [0; 128];
-        let gb_bytes =
-            unsafe { transmute::<sgx_ec256_public_t, [u8; size_of::<sgx_ec256_public_t>()]>(g_b) };
-        let ga_bytes =
-            unsafe { transmute::<sgx_ec256_public_t, [u8; size_of::<sgx_ec256_public_t>()]>(g_a) };
+        let gb_bytes = g_b.to_raw_bytes();
+        let ga_bytes = g_a.to_raw_bytes();
         gb_ga[..64].copy_from_slice(&gb_bytes);
         gb_ga[64..].copy_from_slice(&ga_bytes);
 
@@ -245,33 +159,15 @@ mod sgx_ra {
         debug!("{:02x?}", &gb_ga[64..96]);
         debug!("{:02x?}", &gb_ga[96..128]);
 
-        let keypair = &session.svr_ecdsa_key;
-        let sign_gb_ga = keypair.sign(&rng, &gb_ga).unwrap();
-
-        let mut sig_x = [0_u8; 32];
-        let mut sig_y = [0_u8; 32];
-
-        // signature is of r || s where r, s are big-endian bigints
-        // copy r to x
-        sig_x.copy_from_slice(sign_gb_ga.as_ref().get(..32).unwrap());
-        // copy s to y
-        sig_y.copy_from_slice(sign_gb_ga.as_ref().get(32..).unwrap());
-
-        // covert them to little-endian
-        sig_x.reverse();
-        sig_y.reverse();
-
-        // convert to u32 array from u8 array
-        let sig_x_u32 = unsafe { transmute::<[u8; 32], [u32; 8]>(sig_x) };
-        let sig_y_u32 = unsafe { transmute::<[u8; 32], [u32; 8]>(sig_y) };
+        let aas_prvkey = &session.svr_ecdsa_key;
+        let sign_gb_ga = secp256r1_sign_msg(&aas_prvkey, &gb_ga).unwrap();
 
         let mut p_msg2 = sgx_ra_msg2_t::default();
-        p_msg2.g_b = g_b;
+        p_msg2.g_b = g_b.to_sgx_ec256_public();
         p_msg2.spid.id = session.spid;
         p_msg2.quote_type = 1_u16;
         p_msg2.kdf_id = 1_u16;
-        p_msg2.sign_gb_ga.x.copy_from_slice(&sig_x_u32);
-        p_msg2.sign_gb_ga.y.copy_from_slice(&sig_y_u32);
+        p_msg2.sign_gb_ga = sign_gb_ga.signature.to_sgx_ec256_signature();
 
         // the mac is an aes-128 cmac over the p_msg2 structure from g_b till sign_gb_ga
         // using smk as the key
@@ -293,10 +189,8 @@ mod sgx_ra {
                 p_msg2_slice_size,
             )
         };
-        let mut mac = Cmac::<Aes128>::new_varkey(&session.session_key.smk).unwrap();
-        mac.input(p_msg2_bytes_slice);
-        let result = mac.result().code();
-        p_msg2.mac.copy_from_slice(&result);
+        let mac = aes128cmac_mac(&session.session_key.smk, p_msg2_bytes_slice).unwrap();
+        p_msg2.mac = mac.mac;
 
         let sigrl = session.ias_server.get_sigrl(&p_msg1.gid);
         p_msg2.sig_rl_size = sigrl.len() as u32;
@@ -315,48 +209,49 @@ mod sgx_ra {
         msg2_buf
     }
 
-    pub fn sp_proc_ra_msg3(msg3_slice: &[u8], session: &mut RaSession) -> ias::IasReportResponse {
+    pub fn sp_proc_ra_msg3(
+        msg3_slice: &[u8],
+        session: &mut RaSession,
+    ) -> Result<ias::IasReportResponse, CryptoError> {
         let msg3 = SgxRaMsg3::from_slice(msg3_slice).unwrap();
         // verify sgx_ra_msg3_t using derived smk as described in Intel's manual.
-        msg3.verify(session.session_key.smk);
-        let avr = session.ias_server.verify_quote(msg3.quote).unwrap();
-        avr
+        if msg3.verify(&session.session_key.smk) {
+            let avr = session.ias_server.verify_quote(msg3.quote).unwrap();
+            Ok(avr)
+        } else {
+            Err(CryptoError::InvalidMac)
+        }
     }
 
     pub fn sp_proc_aas_reg_request(
-        reg_request: &CAasRegRequest,
+        reg_request: &AasRegRequest,
         session: &RaSession,
     ) -> Result<AasRegReport, CryptoError> {
-        let worker_mac_sgx = reg_request.mac;
-        let p_data = &reg_request.pubkey as *const sgx_ec256_public_t as *const u8;
-        let data_slice =
-            unsafe { core::slice::from_raw_parts(p_data, size_of::<sgx_ec256_public_t>()) };
+        let worker_mac = reg_request.mac;
+        let data_slice = reg_request.to_check_bytes();
 
         let sk = session.session_key.sk;
-        if aes_utils::aes128_cmac_verify(&sk, &data_slice, &worker_mac_sgx) {
+        if aes128cmac_verify(&sk, &data_slice, &worker_mac)? {
             let mut result = AasRegReport::default();
             result.attested_time = std::time::SystemTime::now()
                 .duration_since(std::time::SystemTime::UNIX_EPOCH)
                 .unwrap()
                 .as_secs();
-            result.worker_pubkey = secp256r1_public::from_sgx_ec256_public(&reg_request.pubkey);
-            let result = aas_utils::sign_aas_reg_report(result, &session.svr_ecdsa_key);
-            Ok(result)
+            result.worker_pubkey = reg_request.worker_pubkey;
+            aas_sign_reg_report(&session.svr_ecdsa_key, result)
         } else {
             Err(CryptoError::InvalidMac)
         }
     }
 
     impl SgxRaMsg3 {
-        pub fn verify(&self, smk: sgx_key_128bit_t) -> bool {
+        pub fn verify(&self, smk: &Aes128Key) -> bool {
             let msg3_bytes = self.as_bytes();
             let msg3_content = msg3_bytes.get(size_of::<sgx_mac_t>()..).unwrap();
-            let mut mac = Cmac::<Aes128>::new_varkey(&smk).unwrap();
-            mac.input(msg3_content);
-            match mac.verify(&self.raw_ra_msg3.mac) {
-                Ok(()) => true,
-                _ => false,
-            }
+            let msg3_mac = Aes128Mac {
+                mac: self.raw_ra_msg3.mac,
+            };
+            aes128cmac_verify(smk, msg3_content, &msg3_mac).unwrap()
         }
 
         pub fn from_slice(msg3_bytes: &[u8]) -> Option<SgxRaMsg3> {
@@ -488,3 +383,5 @@ mod sgx_ra {
         }
     }
 }
+#[cfg(test)]
+mod tests {}

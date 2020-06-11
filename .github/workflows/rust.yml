@@ -33,4 +33,4 @@ jobs:
         chmod +x sgx_linux_x64_sdk_2.9.101.2.bin
         echo -e 'no\n/opt/intel' | ./sgx_linux_x64_sdk_2.9.101.2.bin
     - name: run unit test
-      run: cargo test --all
+      run: cargo test --release
