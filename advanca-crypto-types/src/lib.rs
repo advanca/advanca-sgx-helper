@@ -175,7 +175,7 @@ pub struct AasRegReport {
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[derive(
-    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone,
 )]
 pub struct AasTimestamp {
     pub timestamp: u64,
