@@ -173,6 +173,15 @@ pub struct AasRegReport {
     pub aas_signature: Secp256r1Signature,
 }
 
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
+pub struct AasTimestamp {
+    pub timestamp: u64,
+    pub data : Vec<u8>,
+}
+
 impl AasRegRequest {
     // worker_pubkey - 64
     // mac           - 16
