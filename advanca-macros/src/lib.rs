@@ -29,6 +29,17 @@ macro_rules! enclave_ret {
 }
 
 #[macro_export]
+macro_rules! enclave_ret_protobuf {
+    ($expr:expr, $buf:expr, $bufsize:expr) => {{
+        let obj = $expr;
+        let mut buf_slice = core::slice::from_raw_parts_mut($buf, *$bufsize);
+        let obj_bytes = obj.write_to_bytes().unwrap();
+        buf_slice[..obj_bytes.len()].copy_from_slice(&obj_bytes);
+        *$bufsize = obj_bytes.len();
+    }};
+}
+
+#[macro_export]
 macro_rules! enclave_cryptoerr {
     ($expr:expr) => {{
         let s = $expr;
