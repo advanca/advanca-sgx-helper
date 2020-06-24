@@ -174,12 +174,20 @@ pub struct AasRegReport {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(
-    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone,
-)]
+#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
+pub struct AliveEvidence {
+    pub magic_str: [u8; 8],
+    pub task_id: Vec<u8>,
+    pub block_hash: Vec<u8>,
+    pub data_in: usize,
+    pub data_out: usize,
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
 pub struct AasTimestamp {
     pub timestamp: u64,
-    pub data : Vec<u8>,
+    pub data: Vec<u8>,
 }
 
 impl AasRegRequest {
