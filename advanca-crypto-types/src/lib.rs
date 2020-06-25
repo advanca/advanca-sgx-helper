@@ -181,6 +181,9 @@ pub struct AliveEvidence {
     pub block_hash: Vec<u8>,
     pub data_in: usize,
     pub data_out: usize,
+    pub storage_in : usize,
+    pub storage_out : usize,
+    pub storage_size : usize,
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
