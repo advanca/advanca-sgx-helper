@@ -1,6 +1,6 @@
 [package]
 name = "advanca-macros"
-version = "0.1.0"
+version = "0.3.0"
 authors = ["Chua Zheng Leong <czl@iiyume.org>"]
 edition = "2018"
 
