@@ -296,9 +296,17 @@ impl Secp256r1PrivateKey {
     #[cfg(feature = "openssl_support")]
     pub fn from_der(der_bytes: &[u8]) -> Secp256r1PrivateKey {
         let eckey = EcKey::private_key_from_der(der_bytes).unwrap();
+        let mut prvkey_bytes_le = eckey.private_key().to_vec();
+        prvkey_bytes_le.reverse();
+        let bytes_len = prvkey_bytes_le.len();
+        // for private keys with leading 0s, 0s will not be reflected in the vec
+        // pad it with 0s
+        let num_pad_bytes = 32 - bytes_len;
+        if num_pad_bytes > 0 {
+            prvkey_bytes_le.resize(bytes_len + num_pad_bytes, 0);
+        }
         let mut seed = [0_u8; 32];
-        seed.copy_from_slice(eckey.private_key().to_vec().as_slice());
-        seed.reverse();
+        seed.copy_from_slice(prvkey_bytes_le.as_slice());
 
         Secp256r1PrivateKey { r: seed }
     }
