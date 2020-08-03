@@ -38,4 +38,7 @@ ring                  = { optional = true, version = "0.16.13" }
 cmac                  = { optional = true, version = "0.2.0" }
 aes                   = { optional = true, version = "0.3.2" }
 
+schnorrkel            = { version = "0.9.1", default-features = false }
+curve25519-dalek      = { version = "2.1.0", default-features = false, features = ["u64_backend"]}
+
 # [target.'cfg(not(features = "enclave"))'.dependencies]
