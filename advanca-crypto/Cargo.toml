@@ -9,11 +9,11 @@ license = "Apache-2.0"
 
 [features]
 default          = []
-sgx_enclave      = ["sgx_tcrypto", "sgx_tkey_exchange", "sgx_tstd", "advanca-crypto-types/sgx_enclave", "advanca-macros/sgx_enclave"]
+sgx_enclave      = ["sgx_tcrypto", "sgx_tkey_exchange", "sgx_tstd", "advanca-crypto-types/sgx_enclave", "advanca-macros/sgx_enclave", "rand"]
 
 ring_support     = ["ring", "std_env"]
-aes_support      = ["rand", "aes", "cmac", "std_env"]
-aas_support      = ["rand", "ring_support"]
+aes_support      = ["rand/std", "aes", "cmac", "std_env"]
+aas_support      = ["rand/std", "ring_support"]
 std_env          = ["ring_support", "aes_support", "aas_support", "sgx_ucrypto", "advanca-crypto-types/std_env", "advanca-macros/std_env"]
 
 [dependencies]
@@ -24,7 +24,10 @@ sgx_tkey_exchange     = { rev = "v1.1.2", optional = true, git = "https://github
 ring                  = { optional = true, version = "0.16.13" }
 cmac                  = { optional = true, version = "0.2.0" }
 aes                   = { optional = true, version = "0.3.2" }
-rand                  = { optional = true, version = "0.7.3" }
+rand                  = { optional = true, version = "0.7.3", default-features = false }
 sgx_tstd              = { rev = "v1.1.2", optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git" }
 sgx_ucrypto           = { rev = "v1.1.2", optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git"}
 sgx_tcrypto           = { rev = "v1.1.2", optional = true, git = "https://github.com/apache/teaclave-sgx-sdk.git"}
+
+schnorrkel            = { version = "0.9.1", default-features = false }
+curve25519-dalek      = { version = "2.1.0", default-features = false, features = ["u64_backend"]}
