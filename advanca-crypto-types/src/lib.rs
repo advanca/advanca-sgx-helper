@@ -34,6 +34,9 @@ use serde_big_array::big_array;
 use std::string::String;
 use std::vec::Vec;
 
+use schnorrkel::keys::{PublicKey, SecretKey};
+use schnorrkel::sign::Signature;
+
 #[cfg(feature = "openssl_support")]
 use openssl::ec::EcKey;
 
@@ -126,6 +129,33 @@ pub struct Secp256r1Signature {
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
+pub struct Sr25519PrivateKey {
+    pub secret: [u8; 32],
+    pub nonce: [u8; 32],
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
+pub struct Sr25519PublicKey {
+    // compressed Ristretto form byte array
+    pub compressed_point: [u8; 32],
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(
+    Serialize, Deserialize, Copy, Clone,
+)]
+pub struct Sr25519Signature {
+    #[serde(with = "BigArray")]
+    pub signature_bytes: [u8; 64],
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(
+    Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
+)]
 pub struct Aes128Key {
     pub key: [u8; 16],
 }
@@ -151,6 +181,13 @@ pub struct Aes128EncryptedMsg {
 pub struct Secp256r1SignedMsg {
     pub msg: Vec<u8>,
     pub signature: Secp256r1Signature,
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+pub struct Sr25519SignedMsg {
+    pub msg: Vec<u8>,
+    pub signature: Sr25519Signature,
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
@@ -243,6 +280,69 @@ impl Aes128Key {
 impl Aes128Mac {
     pub fn to_raw_bytes(&self) -> [u8; 16] {
         self.mac
+    }
+}
+
+impl Sr25519PublicKey {
+    pub fn from_schnorrkel_public(key: &PublicKey) -> Sr25519PublicKey {
+        Sr25519PublicKey {
+            compressed_point: key.to_bytes(),
+        }
+    }
+
+    pub fn to_schnorrkel_public(&self) -> PublicKey {
+        PublicKey::from_bytes(&self.compressed_point).expect("bytes to pubkey ok")
+    }
+}
+
+impl Sr25519PrivateKey {
+    pub fn from_schnorrkel_private(key: &SecretKey) -> Sr25519PrivateKey {
+        let bytes = key.to_bytes();
+        let mut secret_bytes = [0_u8; 32];
+        let mut nonce_bytes = [0_u8; 32];
+        secret_bytes.copy_from_slice(&bytes[..32]);
+        nonce_bytes.copy_from_slice(&bytes[32..]);
+        Sr25519PrivateKey {
+            secret: secret_bytes,
+            nonce: nonce_bytes,
+        }
+    }
+
+    pub fn to_schnorrkel_private(&self) -> SecretKey {
+        SecretKey::from_bytes(&self.to_raw_bytes()).expect("secret key bytes ok!")
+    }
+
+    pub fn to_raw_bytes(&self) -> [u8; 64] {
+        let mut bytes = [0_u8; 64];
+        bytes[..32].copy_from_slice(&self.secret);
+        bytes[32..].copy_from_slice(&self.nonce);
+        bytes
+    }
+}
+
+impl Sr25519Signature {
+    pub fn from_schnorrkel_signature(signature: &Signature) -> Sr25519Signature {
+        Sr25519Signature {
+            signature_bytes: signature.to_bytes(),
+        }
+    }
+
+    pub fn to_schnorrkel_signature(&self) -> Signature {
+        Signature::from_bytes(&self.signature_bytes).expect("Sr25519Signature bytes ok!")
+    }
+}
+
+impl Default for Sr25519Signature {
+    fn default() -> Self {
+        Sr25519Signature {
+            signature_bytes: [0; 64],
+        }
+    }
+}
+
+impl fmt::Debug for Sr25519Signature {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.signature_bytes[..].fmt(f)
     }
 }
 
