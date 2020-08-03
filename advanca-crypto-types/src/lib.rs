@@ -144,9 +144,7 @@ pub struct Sr25519PublicKey {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
-#[derive(
-    Serialize, Deserialize, Copy, Clone,
-)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 pub struct Sr25519Signature {
     #[serde(with = "BigArray")]
     pub signature_bytes: [u8; 64],
