@@ -159,7 +159,10 @@ pub fn sr25519_sign_msg(
     let rng: StdRng = SeedableRng::from_seed(seed_bytes);
     let secretkey = prvkey.to_schnorrkel_private();
     let context = schnorrkel::signing_context(SIGNING_CONTEXT);
-    let signature = secretkey.sign(schnorrkel::context::attach_rng(context.bytes(msg), rng), &secretkey.to_public());
+    let signature = secretkey.sign(
+        schnorrkel::context::attach_rng(context.bytes(msg), rng),
+        &secretkey.to_public(),
+    );
     Ok(Sr25519SignedMsg {
         msg: msg.to_vec(),
         signature: Sr25519Signature::from_schnorrkel_signature(&signature),
@@ -181,9 +184,10 @@ pub fn sr25519_verify_signature(
     let context = schnorrkel::signing_context(SIGNING_CONTEXT);
     let schnorrkel_pubkey = pubkey.to_schnorrkel_public();
     let schnorrkel_signature = signature.to_schnorrkel_signature();
-    Ok(schnorrkel_pubkey.verify(context.bytes(msg), &schnorrkel_signature).is_ok())
+    Ok(schnorrkel_pubkey
+        .verify(context.bytes(msg), &schnorrkel_signature)
+        .is_ok())
 }
-
 
 pub fn derive_kdk(
     prvkey: &Secp256r1PrivateKey,
