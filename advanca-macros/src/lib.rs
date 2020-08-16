@@ -20,11 +20,10 @@ macro_rules! enclave_ret {
     ($expr:expr, $buf:expr, $bufsize:expr) => {{
         let obj = $expr;
         let mut buf_slice = core::slice::from_raw_parts_mut($buf, *$bufsize);
-        let writer = SliceWrite::new(&mut buf_slice);
-        let mut ser = Serializer::new(writer);
-        obj.serialize(&mut ser).unwrap();
-        let writer = ser.into_inner();
-        *$bufsize = writer.bytes_written();
+        let serialized_bytes = serde_json::to_vec(&obj).unwrap();
+        let serialized_bytes_len = serialized_bytes.len();
+        buf_slice[..serialized_bytes_len].copy_from_slice(serialized_bytes.as_slice());
+        *$bufsize = serialized_bytes_len;
     }};
 }
 

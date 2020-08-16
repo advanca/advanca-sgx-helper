@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![cfg_attr(any(feature = "sgx_enclave"), no_std)]
+#![cfg_attr(any(feature = "sgx_enclave", feature = "substrate"), no_std)]
 
 #[cfg(feature = "sgx_enclave")]
 #[macro_use]
@@ -22,18 +22,22 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "std_env")]
 use serde;
 #[cfg(feature = "std_env")]
-use serde_big_array;
+use serde_big_array::big_array;
 
 #[cfg(feature = "sgx_enclave")]
-use serde_big_array_sgx as serde_big_array;
+//use serde_big_array_sgx as serde_big_array;
+use serde_big_array_sgx::big_array;
 #[cfg(feature = "sgx_enclave")]
 use serde_sgx as serde;
 
-use serde::{Deserialize, Serialize};
-use serde_big_array::big_array;
+#[cfg(feature = "substrate")]
+//use serde_big_array_substrate as serde_big_array;
+use serde_big_array_substrate::big_array;
+#[cfg(feature = "substrate")]
+use serde_substrate as serde;
 
-use std::string::String;
-use std::vec::Vec;
+use serde::{Deserialize, Serialize};
+//use serde_big_array::big_array;
 
 use schnorrkel::keys::{PublicKey, SecretKey};
 use schnorrkel::sign::Signature;
@@ -46,14 +50,26 @@ use ring::agreement;
 #[cfg(feature = "ring_support")]
 use ring::signature::{self, Signature};
 
+#[cfg(not(feature = "substrate"))]
 use sgx_types::*;
 
+#[cfg(feature = "substrate")]
+use sp_std::prelude::*;
+
 use core::fmt;
+#[cfg(not(feature = "substrate"))]
 use core::mem::transmute;
+
+#[cfg(not(feature = "substrate"))]
 use std::error::Error;
+#[cfg(not(feature = "substrate"))]
+use std::string::String;
+#[cfg(not(feature = "substrate"))]
+use std::vec::Vec;
 
 big_array! { BigArray; }
 
+#[cfg(not(feature = "substrate"))]
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[derive(Debug, Serialize, Deserialize)]
 pub enum CryptoError {
@@ -61,6 +77,7 @@ pub enum CryptoError {
     SgxError(u32, String),
 }
 
+#[cfg(not(feature = "substrate"))]
 impl fmt::Display for CryptoError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -70,6 +87,7 @@ impl fmt::Display for CryptoError {
     }
 }
 
+#[cfg(not(feature = "substrate"))]
 impl Error for CryptoError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         None
@@ -77,6 +95,7 @@ impl Error for CryptoError {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -86,6 +105,7 @@ pub struct EphemeralKey {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize)]
 pub struct Rsa3072Signature {
     #[serde(with = "BigArray")]
@@ -93,6 +113,7 @@ pub struct Rsa3072Signature {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize)]
 pub struct Rsa3072PublicKey {
     #[serde(with = "BigArray")]
@@ -101,6 +122,7 @@ pub struct Rsa3072PublicKey {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -110,6 +132,7 @@ pub struct Secp256r1PublicKey {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -118,6 +141,7 @@ pub struct Secp256r1PrivateKey {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -127,6 +151,7 @@ pub struct Secp256r1Signature {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -136,6 +161,7 @@ pub struct Sr25519PrivateKey {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -145,6 +171,7 @@ pub struct Sr25519PublicKey {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize, Copy, Clone)]
 pub struct Sr25519Signature {
     #[serde(with = "BigArray")]
@@ -152,6 +179,7 @@ pub struct Sr25519Signature {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -160,6 +188,7 @@ pub struct Aes128Key {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -168,6 +197,7 @@ pub struct Aes128Mac {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
 pub struct Aes128EncryptedMsg {
     pub iv: [u8; 12],
@@ -176,6 +206,7 @@ pub struct Aes128EncryptedMsg {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
 pub struct Secp256r1SignedMsg {
     pub msg: Vec<u8>,
@@ -183,6 +214,7 @@ pub struct Secp256r1SignedMsg {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Sr25519SignedMsg {
     pub msg: Vec<u8>,
@@ -190,6 +222,7 @@ pub struct Sr25519SignedMsg {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -199,6 +232,7 @@ pub struct AasRegRequest {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
@@ -209,6 +243,7 @@ pub struct AasRegReport {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
 pub struct AliveEvidence {
     pub magic_str: [u8; 8],
@@ -222,6 +257,7 @@ pub struct AliveEvidence {
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
 pub struct AasTimestamp {
     pub timestamp: u64,
@@ -346,6 +382,7 @@ impl fmt::Debug for Sr25519Signature {
 }
 
 impl Secp256r1PublicKey {
+    #[cfg(not(feature = "substrate"))]
     pub fn from_sgx_ec256_public(key: &sgx_ec256_public_t) -> Secp256r1PublicKey {
         Secp256r1PublicKey {
             gx: key.gx,
@@ -353,6 +390,7 @@ impl Secp256r1PublicKey {
         }
     }
 
+    #[cfg(not(feature = "substrate"))]
     pub fn to_sgx_ec256_public(&self) -> sgx_ec256_public_t {
         sgx_ec256_public_t {
             gx: self.gx,
@@ -409,10 +447,12 @@ impl Secp256r1PrivateKey {
         Secp256r1PrivateKey { r: seed }
     }
 
+    #[cfg(not(feature = "substrate"))]
     pub fn from_sgx_ec256_private(key: &sgx_ec256_private_t) -> Secp256r1PrivateKey {
         Secp256r1PrivateKey { r: key.r }
     }
 
+    #[cfg(not(feature = "substrate"))]
     pub fn to_sgx_ec256_private(&self) -> sgx_ec256_private_t {
         sgx_ec256_private_t { r: self.r }
     }
@@ -425,6 +465,7 @@ impl Secp256r1PrivateKey {
 }
 
 impl Secp256r1Signature {
+    #[cfg(not(feature = "substrate"))]
     pub fn from_sgx_ec256_signature(sig: sgx_ec256_signature_t) -> Secp256r1Signature {
         Secp256r1Signature {
             x: unsafe { transmute::<[u32; 8], [u8; 32]>(sig.x) },
@@ -432,6 +473,7 @@ impl Secp256r1Signature {
         }
     }
 
+    #[cfg(not(feature = "substrate"))]
     pub fn to_sgx_ec256_signature(&self) -> sgx_ec256_signature_t {
         sgx_ec256_signature_t {
             x: unsafe { transmute::<[u8; 32], [u32; 8]>(self.x) },
