@@ -236,7 +236,8 @@ mod sgx_ra {
                 .duration_since(std::time::SystemTime::UNIX_EPOCH)
                 .unwrap()
                 .as_secs();
-            result.worker_pubkey = reg_request.worker_pubkey;
+            result.enclave_secp256r1_pubkey = reg_request.enclave_secp256r1_pubkey;
+            result.enclave_sr25519_pubkey = reg_request.enclave_sr25519_pubkey;
             aas_sign_reg_report(&session.svr_ecdsa_key, result)
         } else {
             Err(CryptoError::InvalidMac)
