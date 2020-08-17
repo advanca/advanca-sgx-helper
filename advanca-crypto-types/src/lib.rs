@@ -334,8 +334,8 @@ impl Sr25519PublicKey {
         PublicKey::from_bytes(&self.compressed_point).expect("bytes to pubkey ok")
     }
 
-    pub fn to_raw_bytes(&self) -> [u8; 64] {
-        let mut bytes = [0_u8; 64];
+    pub fn to_raw_bytes(&self) -> [u8; 32] {
+        let mut bytes = [0_u8; 32];
         bytes[..].copy_from_slice(&self.compressed_point);
         bytes
     }
