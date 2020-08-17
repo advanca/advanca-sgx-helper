@@ -227,8 +227,8 @@ pub struct Sr25519SignedMsg {
     Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone,
 )]
 pub struct AasRegRequest {
-    pub worker_secp256r1_pubkey: Secp256r1PublicKey,
-    pub worker_sr25519_pubkey: Sr25519PublicKey,
+    pub enclave_secp256r1_pubkey: Secp256r1PublicKey,
+    pub enclave_sr25519_pubkey: Sr25519PublicKey,
     pub mac: Aes128Mac,
 }
 
@@ -239,8 +239,8 @@ pub struct AasRegRequest {
 )]
 pub struct AasRegReport {
     pub attested_time: u64,
-    pub worker_secp256r1_pubkey: Secp256r1PublicKey,
-    pub worker_sr25519_pubkey: Sr25519PublicKey,
+    pub enclave_secp256r1_pubkey: Secp256r1PublicKey,
+    pub enclave_sr25519_pubkey: Sr25519PublicKey,
     pub aas_signature: Secp256r1Signature,
 }
 
@@ -267,13 +267,13 @@ pub struct AasTimestamp {
 }
 
 impl AasRegRequest {
-    // worker_secp256r1_pubkey - 64
-    // worker_sr25519pubkey    - 32
+    // enclave_secp256r1_pubkey - 64
+    // enclave_sr25519pubkey    - 32
     // mac                     - 16
     pub fn to_raw_bytes(&self) -> [u8; 112] {
         let mut bytes = [0_u8; 112];
-        bytes[..64].copy_from_slice(&self.worker_secp256r1_pubkey.to_raw_bytes());
-        bytes[64..96].copy_from_slice(&self.worker_sr25519_pubkey.to_raw_bytes());
+        bytes[..64].copy_from_slice(&self.enclave_secp256r1_pubkey.to_raw_bytes());
+        bytes[64..96].copy_from_slice(&self.enclave_sr25519_pubkey.to_raw_bytes());
         bytes[96..].copy_from_slice(&self.mac.to_raw_bytes());
         bytes
     }
@@ -287,14 +287,14 @@ impl AasRegRequest {
 
 impl AasRegReport {
     // attested_time             - 8
-    // worker_secp256r1_pubkey   - 64
-    // worker_sr25519_pubkey     - 32
+    // enclave_secp256r1_pubkey   - 64
+    // enclave_sr25519_pubkey     - 32
     // aas_signature             - 64
     pub fn to_raw_bytes(&self) -> [u8; 168] {
         let mut bytes = [0_u8; 168];
         bytes[..8].copy_from_slice(&self.attested_time.to_le_bytes());
-        bytes[8..72].copy_from_slice(&self.worker_secp256r1_pubkey.to_raw_bytes());
-        bytes[72..104].copy_from_slice(&self.worker_sr25519_pubkey.to_raw_bytes());
+        bytes[8..72].copy_from_slice(&self.enclave_secp256r1_pubkey.to_raw_bytes());
+        bytes[72..104].copy_from_slice(&self.enclave_sr25519_pubkey.to_raw_bytes());
         bytes[104..].copy_from_slice(&self.aas_signature.to_raw_bytes());
         bytes
     }
