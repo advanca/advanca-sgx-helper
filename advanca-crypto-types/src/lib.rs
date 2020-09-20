@@ -255,6 +255,7 @@ pub struct AliveEvidence {
     pub storage_in: usize,
     pub storage_out: usize,
     pub storage_size: usize,
+    pub compute: usize,
 }
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
