@@ -2,5 +2,6 @@
 members = [
     "advanca-crypto",
     "advanca-crypto-types",
-    "sgx-ra"
+    "sgx-ra",
+    "advanca-macros"
 ]
