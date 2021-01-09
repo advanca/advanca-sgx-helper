@@ -66,6 +66,9 @@ use std::string::String;
 #[cfg(not(feature = "substrate"))]
 use std::vec::Vec;
 
+#[cfg(not(feature = "substrate"))]
+use std::convert::From;
+
 big_array! { BigArray; }
 
 #[cfg(not(feature = "substrate"))]
@@ -529,6 +532,28 @@ impl Secp256r1Signature {
         bytes
     }
 }
+
+#[cfg(not(feature = "substrate"))]
+impl From<sgx_ec256_private_t> for Secp256r1PrivateKey {
+    fn from(item: sgx_ec256_private_t) -> Self {
+        Secp256r1PrivateKey::from_sgx_ec256_private(&item)
+    }
+}
+
+#[cfg(not(feature = "substrate"))]
+impl From<sgx_ec256_public_t> for Secp256r1PublicKey {
+    fn from(item: sgx_ec256_public_t) -> Self {
+        Secp256r1PublicKey::from_sgx_ec256_public(&item)
+    }
+}
+
+#[cfg(not(feature = "substrate"))]
+impl From<sgx_ec256_signature_t> for Secp256r1Signature {
+    fn from (item: sgx_ec256_signature_t) -> Self {
+        Secp256r1Signature::from_sgx_ec256_signature(item)
+    }
+}
+
 
 impl Default for Rsa3072Signature {
     fn default() -> Self {
