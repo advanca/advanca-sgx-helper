@@ -78,5 +78,18 @@ macro_rules! handle_ecall {
                 Ok(())
             }
         }
-    }
+    };
+    ($eid:expr, $mod_name:ident::$func_name:ident ($($args:expr),*)) => {
+        {
+            let mut ret = sgx_status_t::SGX_SUCCESS;
+            let ecall_ret = $mod_name::$func_name($eid, &mut ret, $($args),*);
+            if ecall_ret != sgx_status_t::SGX_SUCCESS {
+                Err(CryptoError::SgxError(ecall_ret.from_key(), format!("{}", ecall_ret)))
+            } else if ret != sgx_status_t::SGX_SUCCESS {
+                Err(CryptoError::SgxError(ret.from_key(), format!("{}", ret)))
+            } else {
+                Ok(())
+            }
+        }
+    };
 }
