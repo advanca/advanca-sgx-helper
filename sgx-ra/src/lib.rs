@@ -26,6 +26,8 @@ mod sgx_ra {
 
     use crate::ias;
 
+    use serde::{Serialize, Deserialize};
+
     use advanca_crypto::*;
     use advanca_crypto_types::*;
 
@@ -41,6 +43,12 @@ mod sgx_ra {
 
     pub struct SgxReportBody {
         pub raw_sgx_report_body: sgx_report_body_t,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Default)]
+    struct Msg3Reply {
+        is_verified: bool,
+        tcb_update: Option<Vec<u8>>,
     }
 
     pub struct RaSession {
