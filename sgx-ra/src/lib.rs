@@ -47,8 +47,8 @@ mod sgx_ra {
 
     #[derive(Serialize, Deserialize, Clone, Default, Debug)]
     pub struct Msg3Reply {
-        is_verified: bool,
-        tcb_update: Option<Vec<u8>>,
+        pub is_verified: bool,
+        pub tcb_update: Option<Vec<u8>>,
     }
 
     pub struct RaSession {
