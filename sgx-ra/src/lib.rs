@@ -45,7 +45,7 @@ mod sgx_ra {
         pub raw_sgx_report_body: sgx_report_body_t,
     }
 
-    #[derive(Serialize, Deserialize, Clone, Default)]
+    #[derive(Serialize, Deserialize, Clone, Default, Debug)]
     pub struct Msg3Reply {
         is_verified: bool,
         tcb_update: Option<Vec<u8>>,
