@@ -46,7 +46,7 @@ mod sgx_ra {
     }
 
     #[derive(Serialize, Deserialize, Clone, Default)]
-    struct Msg3Reply {
+    pub struct Msg3Reply {
         is_verified: bool,
         tcb_update: Option<Vec<u8>>,
     }
