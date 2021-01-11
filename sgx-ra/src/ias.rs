@@ -201,6 +201,9 @@ impl From<[u8; SGX_PLATFORM_INFO_SIZE]> for IasPlatformInfoBlob {
         let parsed_blob: platform_info_blob = unsafe{transmute(blob_bytes)};
         IasPlatformInfoBlob {
             sgx_epid_group_flags: SgxEpidGroupFlags::from_bits(parsed_blob.sgx_epid_group_flags).unwrap(),
+            // https://github.com/intel/linux-sgx/blob/33f4499173497bdfdf72c5f61374c0fadc5c5365/psw/ae/aesm_service/source/bundles/epid_quote_service_bundle/platform_info_facility.cpp#L59
+            // const uint16_t* p = reinterpret_cast<const uint16_t*>(p_platform_info_blob->platform_info_blob.sgx_tcb_evaluation_flags);
+            // *pflags = lv_ntohs(*p);
             sgx_tcb_evaluation_flags: SgxTcbEvaluationFlags::from_bits(u16::from_be(parsed_blob.sgx_tcb_evaluation_flags)).unwrap(),
             pse_evaluation_flags: PseEvaluationFlags::from_bits(u16::from_be(parsed_blob.pse_evaluation_flags)).unwrap(),
             latest_equivalent_tcb_psvn: parsed_blob.latest_equivalent_tcb_psvn,
