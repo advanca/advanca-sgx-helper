@@ -185,9 +185,9 @@ struct platform_info_blob {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IasPlatformInfoBlob {
-    sgx_epid_group_flags: SgxEpidGroupFlags,
-    sgx_tcb_evaluation_flags: SgxTcbEvaluationFlags,
-    pse_evaluation_flags: PseEvaluationFlags,
+    sgx_epid_group_flags: Option<SgxEpidGroupFlags>,
+    sgx_tcb_evaluation_flags: Option<SgxTcbEvaluationFlags>,
+    pse_evaluation_flags: Option<PseEvaluationFlags>,
     latest_equivalent_tcb_psvn: [u8; PSVN_SIZE],
     latest_pse_isvsvn: [u8; ISVSVN_SIZE],
     latest_psda_svn: [u8; PSDA_SVN_SIZE],
@@ -200,9 +200,9 @@ impl From<[u8; SGX_PLATFORM_INFO_SIZE]> for IasPlatformInfoBlob {
     fn from(blob_bytes: [u8; SGX_PLATFORM_INFO_SIZE]) -> Self {
         let parsed_blob: platform_info_blob = unsafe{transmute(blob_bytes)};
         IasPlatformInfoBlob {
-            sgx_epid_group_flags: SgxEpidGroupFlags::from_bits(parsed_blob.sgx_epid_group_flags).unwrap(),
-            sgx_tcb_evaluation_flags: SgxTcbEvaluationFlags::from_bits(parsed_blob.sgx_tcb_evaluation_flags).unwrap(),
-            pse_evaluation_flags: PseEvaluationFlags::from_bits(parsed_blob.pse_evaluation_flags).unwrap(),
+            sgx_epid_group_flags: SgxEpidGroupFlags::from_bits(parsed_blob.sgx_epid_group_flags),
+            sgx_tcb_evaluation_flags: SgxTcbEvaluationFlags::from_bits(parsed_blob.sgx_tcb_evaluation_flags),
+            pse_evaluation_flags: PseEvaluationFlags::from_bits(parsed_blob.pse_evaluation_flags),
             latest_equivalent_tcb_psvn: parsed_blob.latest_equivalent_tcb_psvn,
             latest_pse_isvsvn: parsed_blob.latest_pse_isvsvn,
             latest_psda_svn: parsed_blob.latest_psda_svn,
