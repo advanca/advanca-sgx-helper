@@ -213,6 +213,16 @@ impl From<[u8; SGX_PLATFORM_INFO_SIZE]> for IasPlatformInfoBlob {
     }
 }
 
+impl From<[u8; SGX_PLATFORM_INFO_SIZE+4]> for IasPlatformInfoBlob {
+    fn from(blob_bytes: [u8; SGX_PLATFORM_INFO_SIZE+4]) -> Self {
+        // Remove the TSV header (undocumented)
+        let pib_vec = blob_bytes[4..].to_vec();
+        let mut pib_array: [u8; 101] = [0; 101];
+        pib_array.copy_from_slice(&pib_vec);
+        pib_array.into()
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct IasReportRequest {
