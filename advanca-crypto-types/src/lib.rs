@@ -549,11 +549,17 @@ impl From<sgx_ec256_public_t> for Secp256r1PublicKey {
 
 #[cfg(not(feature = "substrate"))]
 impl From<sgx_ec256_signature_t> for Secp256r1Signature {
-    fn from (item: sgx_ec256_signature_t) -> Self {
+    fn from(item: sgx_ec256_signature_t) -> Self {
         Secp256r1Signature::from_sgx_ec256_signature(item)
     }
 }
 
+#[cfg(not(feature = "substrate"))]
+impl From<[u8; 16]> for Aes128Key {
+    fn from(item: [u8; 16]) -> Self {
+        Aes128Key { key: item }
+    }
+}
 
 impl Default for Rsa3072Signature {
     fn default() -> Self {
