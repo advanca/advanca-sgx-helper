@@ -136,10 +136,10 @@ bitflags! {
     }
 }
 
-const SGX_CPUSVN_SIZE       : usize = 16;
-const PSVN_SIZE             : usize = 18; // sizeof(psvn_t)
-const PSDA_SVN_SIZE         : usize = 4;
-const ISVSVN_SIZE           : usize = 2;
+const SGX_CPUSVN_SIZE: usize = 16;
+const PSVN_SIZE: usize = 18; // sizeof(psvn_t)
+const PSDA_SVN_SIZE: usize = 4;
+const ISVSVN_SIZE: usize = 2;
 const SGX_PLATFORM_INFO_SIZE: usize = 101;
 
 #[allow(non_camel_case_types)]
@@ -198,26 +198,33 @@ pub struct IasPlatformInfoBlob {
 
 impl From<[u8; SGX_PLATFORM_INFO_SIZE]> for IasPlatformInfoBlob {
     fn from(blob_bytes: [u8; SGX_PLATFORM_INFO_SIZE]) -> Self {
-        let parsed_blob: platform_info_blob = unsafe{transmute(blob_bytes)};
+        let parsed_blob: platform_info_blob = unsafe { transmute(blob_bytes) };
         IasPlatformInfoBlob {
-            sgx_epid_group_flags: SgxEpidGroupFlags::from_bits(parsed_blob.sgx_epid_group_flags).unwrap(),
+            sgx_epid_group_flags: SgxEpidGroupFlags::from_bits(parsed_blob.sgx_epid_group_flags)
+                .unwrap(),
             // https://github.com/intel/linux-sgx/blob/33f4499173497bdfdf72c5f61374c0fadc5c5365/psw/ae/aesm_service/source/bundles/epid_quote_service_bundle/platform_info_facility.cpp#L59
             // const uint16_t* p = reinterpret_cast<const uint16_t*>(p_platform_info_blob->platform_info_blob.sgx_tcb_evaluation_flags);
             // *pflags = lv_ntohs(*p);
-            sgx_tcb_evaluation_flags: SgxTcbEvaluationFlags::from_bits(u16::from_be(parsed_blob.sgx_tcb_evaluation_flags)).unwrap(),
-            pse_evaluation_flags: PseEvaluationFlags::from_bits(u16::from_be(parsed_blob.pse_evaluation_flags)).unwrap(),
+            sgx_tcb_evaluation_flags: SgxTcbEvaluationFlags::from_bits(u16::from_be(
+                parsed_blob.sgx_tcb_evaluation_flags,
+            ))
+            .unwrap(),
+            pse_evaluation_flags: PseEvaluationFlags::from_bits(u16::from_be(
+                parsed_blob.pse_evaluation_flags,
+            ))
+            .unwrap(),
             latest_equivalent_tcb_psvn: parsed_blob.latest_equivalent_tcb_psvn,
             latest_pse_isvsvn: parsed_blob.latest_pse_isvsvn,
             latest_psda_svn: parsed_blob.latest_psda_svn,
             xeid: parsed_blob.xeid,
             gid: parsed_blob.gid,
-            signature: parsed_blob.signature.into()
+            signature: parsed_blob.signature.into(),
         }
     }
 }
 
-impl From<[u8; SGX_PLATFORM_INFO_SIZE+4]> for IasPlatformInfoBlob {
-    fn from(blob_bytes: [u8; SGX_PLATFORM_INFO_SIZE+4]) -> Self {
+impl From<[u8; SGX_PLATFORM_INFO_SIZE + 4]> for IasPlatformInfoBlob {
+    fn from(blob_bytes: [u8; SGX_PLATFORM_INFO_SIZE + 4]) -> Self {
         // Remove the TSV header (undocumented)
         let pib_vec = blob_bytes[4..].to_vec();
         let mut pib_array: [u8; 101] = [0; 101];

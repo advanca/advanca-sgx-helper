@@ -26,7 +26,7 @@ mod sgx_ra {
 
     use crate::ias;
 
-    use serde::{Serialize, Deserialize};
+    use serde::{Deserialize, Serialize};
 
     use advanca_crypto::*;
     use advanca_crypto_types::*;
@@ -46,9 +46,14 @@ mod sgx_ra {
     }
 
     #[derive(Serialize, Deserialize, Clone, Default, Debug)]
-    pub struct Msg3Reply {
+    pub struct SgxRaMsg3Reply {
         pub is_verified: bool,
         pub tcb_update: Option<Vec<u8>>,
+    }
+
+    #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+    pub struct SgxRaFinalizeRequest {
+        pub signed_claiminfo: Sr25519SignedMsg,
     }
 
     pub struct RaSession {
@@ -56,7 +61,7 @@ mod sgx_ra {
         spid: [u8; 16],
         ias_server: ias::IasServer,
         _session_state: SessionState,
-        session_key: SessionKeys,
+        pub session_key: SessionKeys,
     }
 
     enum SessionState {
@@ -66,14 +71,14 @@ mod sgx_ra {
         _ProcMsg3,
     }
 
-    #[derive(Default)]
-    struct SessionKeys {
+    #[derive(Default, Clone)]
+    pub struct SessionKeys {
         g_a: Secp256r1PublicKey,
         g_b: Secp256r1PublicKey,
         kdk: Aes128Key,
         smk: Aes128Key,
-        sk: Aes128Key,
-        mk: Aes128Key,
+        pub sk: Aes128Key,
+        pub mk: Aes128Key,
     }
 
     impl RaSession {
