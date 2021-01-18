@@ -29,7 +29,7 @@ use strum_macros::{Display, EnumString};
 use std::error::Error;
 
 use crate::sgx_ra::SgxQuote;
-use advanca_crypto_types::*;
+use advanca_types::*;
 
 use bitflags::bitflags;
 use sgx_types::*;

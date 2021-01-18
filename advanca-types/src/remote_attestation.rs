@@ -15,9 +15,6 @@ use serde_substrate as serde;
 
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "openssl_support")]
-use openssl::ec::EcKey;
-
 #[cfg(feature = "ring_support")]
 use ring::agreement;
 #[cfg(feature = "ring_support")]

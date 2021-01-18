@@ -29,7 +29,7 @@ mod sgx_ra {
     use serde::{Deserialize, Serialize};
 
     use advanca_crypto::*;
-    use advanca_crypto_types::*;
+    use advanca_types::*;
 
     pub struct SgxQuote {
         pub raw_quote: sgx_quote_t,

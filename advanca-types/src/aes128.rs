@@ -3,11 +3,6 @@ use serde;
 #[cfg(feature = "std_env")]
 use serde_big_array::big_array;
 
-#[cfg(feature = "std_env")]
-use serde;
-#[cfg(feature = "std_env")]
-use serde_big_array::big_array;
-
 #[cfg(feature = "sgx_enclave")]
 use serde_big_array_sgx::big_array;
 #[cfg(feature = "sgx_enclave")]

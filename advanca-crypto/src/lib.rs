@@ -33,6 +33,8 @@ pub use secp256r1::*;
 pub use sr25519::*;
 pub use aes128::*;
 pub use remote_attestation::*;
+
+#[cfg(feature = "sgx_enclave")]
 pub use enclave::*;
 
 // mod test;

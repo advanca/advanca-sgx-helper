@@ -1,10 +1,10 @@
-#![cfg(feature = "sgx_enclave")]
 
 use sgx_types::*;
 
 use advanca_types::*;
 use advanca_macros::handle_sgx;
 
+#[allow(dead_code)]
 pub fn enclave_get_sk_key(ra_context: sgx_ra_context_t) -> Result<Aes128Key, CryptoError> {
     let mut key = sgx_key_128bit_t::default();
     unsafe {
