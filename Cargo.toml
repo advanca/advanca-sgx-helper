@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "advanca-crypto",
-    "advanca-crypto-types",
+    "advanca-types",
     "sgx-ra",
     "advanca-macros"
 ]
