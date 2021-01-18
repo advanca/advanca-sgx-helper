@@ -21,5 +21,19 @@ extern crate sgx_tstd as std;
 #[cfg(feature = "untrusted")]
 extern crate sgx_ucrypto;
 
-mod advanca_cryptolib;
-pub use advanca_cryptolib::*;
+mod secp256r1;
+//mod secp256k1;
+mod sr25519;
+mod aes128;
+mod remote_attestation;
+mod enclave;
+
+pub use secp256r1::*;
+//pub use secp256k1::*;
+pub use sr25519::*;
+pub use aes128::*;
+pub use remote_attestation::*;
+pub use enclave::*;
+
+// mod test;
+// pub use test::*;
