@@ -28,10 +28,22 @@ pub fn sr25519_gen_keypair() -> Result<(Sr25519PrivateKey, Sr25519PublicKey), Cr
     Ok((sr25519_prvkey, sr25519_pubkey))
 }
 
-pub fn sr25519_sign_msg(
+pub fn sr25519_sign_msg<T: Serialize>(
+    prvkey: &Sr25519PrivateKey,
+    msg: T,
+) -> Result<Sr25519SignedMsg, CryptoError> {
+    let msg_bytes = serde_json::to_vec(&msg).unwrap();
+    let signature = sr25519_sign_bytes(prvkey, &msg_bytes)?;
+    Ok(Sr25519SignedMsg {
+        msg: msg.to_vec(),
+        signature: signature,
+    })
+}
+
+pub fn sr25519_sign_bytes(
     prvkey: &Sr25519PrivateKey,
     msg: &[u8],
-) -> Result<Sr25519SignedMsg, CryptoError> {
+) -> Result<Sr25519Signature, CryptoError> {
     let mut seed_bytes = [0_u8; 32];
     unsafe {
         handle_sgx!(sgx_read_rand(seed_bytes.as_mut_ptr(), seed_bytes.len()))?;
@@ -43,17 +55,16 @@ pub fn sr25519_sign_msg(
         schnorrkel::context::attach_rng(context.bytes(msg), rng),
         &secretkey.to_public(),
     );
-    Ok(Sr25519SignedMsg {
-        msg: msg.to_vec(),
-        signature: Sr25519Signature::from_schnorrkel_signature(&signature),
-    })
+    Ok(signature.into())
 }
+
 
 pub fn sr25519_verify_msg(
     pubkey: &Sr25519PublicKey,
     signed_msg: &Sr25519SignedMsg,
 ) -> Result<bool, CryptoError> {
-    sr25519_verify_signature(pubkey, &signed_msg.msg, &signed_msg.signature)
+    let msg_bytes = serde_json::to_vec(&signed_msg.msg).unwrap();
+    sr25519_verify_signature(pubkey, &msg_bytes, &signed_msg.signature)
 }
 
 pub fn sr25519_verify_signature(

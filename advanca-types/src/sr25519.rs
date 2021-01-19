@@ -152,7 +152,7 @@ impl From<SecretKey> for Sr25519PrivateKey {
 }
 
 impl From<Sr25519PublicKey> for PublicKey {
-    fn from(item: Sr25519PrivateKey) -> Self {
+    fn from(item: Sr25519PublicKey) -> Self {
         item.to_schnorrkel_public()
     }
 }
@@ -171,6 +171,6 @@ impl From<Sr25519Signature> for Signature {
 
 impl From<Signature> for Sr25519Signature {
     fn from(item: Signature) -> Self {
-        Sr25519PublicKey::from_schnorrkel_signature(&item)
+        Sr25519Signature::from_schnorrkel_signature(&item)
     }
 }
