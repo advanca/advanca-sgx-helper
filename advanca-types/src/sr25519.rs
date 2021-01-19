@@ -59,8 +59,8 @@ pub struct Sr25519Signature {
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
-pub struct Sr25519SignedMsg {
-    pub msg: Vec<u8>,
+pub struct Sr25519SignedMsg<T: Serialize> {
+    pub msg: T,
     pub signature: Sr25519Signature,
 }
 
@@ -136,5 +136,41 @@ impl Default for Sr25519Signature {
 impl fmt::Debug for Sr25519Signature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.signature_bytes[..].fmt(f)
+    }
+}
+
+impl From<Sr25519PrivateKey> for SecretKey {
+    fn from(item: Sr25519PrivateKey) -> Self {
+        item.to_schnorrkel_private()
+    }
+}
+
+impl From<SecretKey> for Sr25519PrivateKey {
+    fn from(item: SecretKey) -> Self {
+        Sr25519PrivateKey::from_schnorrkel_private(&item)
+    }
+}
+
+impl From<Sr25519PublicKey> for PublicKey {
+    fn from(item: Sr25519PrivateKey) -> Self {
+        item.to_schnorrkel_public()
+    }
+}
+
+impl From<PublicKey> for Sr25519PublicKey {
+    fn from(item: PublicKey) -> Self {
+        Sr25519PublicKey::from_schnorrkel_public(&item)
+    }
+}
+
+impl From<Sr25519Signature> for Signature {
+    fn from(item: Sr25519Signature) -> Self {
+        item.to_schnorrkel_signature()
+    }
+}
+
+impl From<Signature> for Sr25519Signature {
+    fn from(item: Signature) -> Self {
+        Sr25519PublicKey::from_schnorrkel_signature(&item)
     }
 }
