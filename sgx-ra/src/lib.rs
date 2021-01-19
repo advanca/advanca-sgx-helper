@@ -18,6 +18,7 @@ pub mod ias;
 // but it will make the usage pattern more complicated
 pub use crate::sgx_ra::*;
 
+
 mod sgx_ra {
     use core::mem::{size_of, transmute};
     use log::debug;
@@ -26,34 +27,26 @@ mod sgx_ra {
 
     use crate::ias;
 
-    use serde::{Deserialize, Serialize};
+    // use serde::{Deserialize, Serialize};
 
     use advanca_crypto::*;
     use advanca_types::*;
 
+    #[derive(Default, Clone)]
     pub struct SgxQuote {
         pub raw_quote: sgx_quote_t,
         pub signature: Vec<u8>,
     }
 
+    #[derive(Default, Clone)]
     pub struct SgxRaMsg3 {
         pub raw_ra_msg3: sgx_ra_msg3_t,
         pub quote: SgxQuote,
     }
 
+    #[derive(Default, Clone)]
     pub struct SgxReportBody {
         pub raw_sgx_report_body: sgx_report_body_t,
-    }
-
-    #[derive(Serialize, Deserialize, Clone, Default, Debug)]
-    pub struct SgxRaMsg3Reply {
-        pub is_verified: bool,
-        pub tcb_update: Option<Vec<u8>>,
-    }
-
-    #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-    pub struct SgxRaFinalizeRequest {
-        pub signed_claiminfo: Sr25519SignedMsg,
     }
 
     pub struct RaSession {
@@ -64,7 +57,7 @@ mod sgx_ra {
         pub session_key: SessionKeys,
     }
 
-    enum SessionState {
+    pub enum SessionState {
         Init,
         _ProcMsg0,
         _ProcMsg1,
@@ -86,6 +79,8 @@ mod sgx_ra {
             self.session_key.smk
         }
     }
+
+
 
     /// Derive SMK, SK, MK, and VK according to
     /// https://software.intel.com/en-us/articles/code-sample-intel-software-guard-extensions-remote-attestation-end-to-end-example

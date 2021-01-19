@@ -34,6 +34,7 @@ use advanca_types::*;
 use bitflags::bitflags;
 use sgx_types::*;
 
+#[derive(Default, Clone)]
 pub struct IasServer {
     api_key: String,
     base_url: &'static str,
