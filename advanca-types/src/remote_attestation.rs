@@ -104,7 +104,7 @@ pub struct ProviderClaimInfo {
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Default, Clone, Serialize, Deserialize)]
-struct AttestorInfo {
+pub struct AttestorInfo {
     uri: String,
     secp256r1_pubkey: Secp256r1PublicKey,
 }
