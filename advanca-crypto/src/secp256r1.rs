@@ -68,15 +68,15 @@ pub fn derive_kdk(
     Ok(Aes128Key { key: mac.mac })
 }
 
-pub fn secp256r1_sign_msg<T: Serialize + Clone>(
+pub fn secp256r1_sign_msg<T: Serialize>(
     prvkey: &Secp256r1PrivateKey,
-    msg: &T,
+    msg: T,
 ) -> Result<Secp256r1SignedMsg<T>, CryptoError> {
-    let msg_bytes = serde_json::to_vec(msg).unwrap();
+    let msg_bytes = serde_json::to_vec(&msg).unwrap();
     let signature = secp256r1_sign_bytes(prvkey, &msg_bytes)?;
 
     Ok(Secp256r1SignedMsg::<T> {
-        msg: (*msg).clone(),
+        msg: msg,
         signature: signature,
     })
 }
