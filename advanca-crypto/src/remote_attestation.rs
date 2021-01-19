@@ -25,11 +25,11 @@ pub fn aas_sign_reg_report(
     reg_report: AasRegReport,
 ) -> Result<AasRegReport, CryptoError> {
     let reg_report_bytes = reg_report.to_check_bytes();
-    let signed_msg = secp256r1_sign_msg(prvkey, &reg_report_bytes)?;
+    let signature = secp256r1_sign_bytes(prvkey, &reg_report_bytes)?;
     Ok(AasRegReport {
         attested_time: reg_report.attested_time,
         enclave_secp256r1_pubkey: reg_report.enclave_secp256r1_pubkey,
         enclave_sr25519_pubkey: reg_report.enclave_sr25519_pubkey,
-        aas_signature: signed_msg.signature,
+        aas_signature: signature,
     })
 }

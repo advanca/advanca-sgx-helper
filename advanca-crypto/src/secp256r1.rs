@@ -1,3 +1,14 @@
+#[cfg(feature = "std_env")]
+use serde;
+#[cfg(feature = "std_env")]
+use serde_json;
+
+#[cfg(feature = "sgx_enclave")]
+use serde_sgx as serde;
+#[cfg(feature = "sgx_enclave")]
+use serde_json_sgx as serde_json;
+
+use serde::{Serialize, Deserialize};
 
 use advanca_types::*;
 use sgx_types::*;
@@ -57,10 +68,23 @@ pub fn derive_kdk(
     Ok(Aes128Key { key: mac.mac })
 }
 
-pub fn secp256r1_sign_msg(
+pub fn secp256r1_sign_msg<T: Serialize + Clone>(
+    prvkey: &Secp256r1PrivateKey,
+    msg: &T,
+) -> Result<Secp256r1SignedMsg<T>, CryptoError> {
+    let msg_bytes = serde_json::to_vec(msg).unwrap();
+    let signature = secp256r1_sign_bytes(prvkey, &msg_bytes)?;
+
+    Ok(Secp256r1SignedMsg::<T> {
+        msg: (*msg).clone(),
+        signature: signature,
+    })
+}
+
+pub fn secp256r1_sign_bytes (
     prvkey: &Secp256r1PrivateKey,
     msg: &[u8],
-) -> Result<Secp256r1SignedMsg, CryptoError> {
+) -> Result<Secp256r1Signature, CryptoError> {
     let mut sgx_prvkey = prvkey.to_sgx_ec256_private();
     let mut ecc_handle: sgx_ecc_state_handle_t = 0 as sgx_ecc_state_handle_t;
     let mut signature = sgx_ec256_signature_t::default();
@@ -77,20 +101,18 @@ pub fn secp256r1_sign_msg(
         handle_sgx!(sgx_ecc256_close_context(ecc_handle))?;
     }
 
-    Ok(Secp256r1SignedMsg {
-        msg: msg.to_vec(),
-        signature: Secp256r1Signature::from_sgx_ec256_signature(signature),
-    })
+    Ok(signature.into())
 }
 
-pub fn secp256r1_verify_msg(
+pub fn secp256r1_verify_msg<T: Serialize>(
     pubkey: &Secp256r1PublicKey,
-    signed_msg: &Secp256r1SignedMsg,
+    signed_msg: &Secp256r1SignedMsg<T>,
 ) -> Result<bool, CryptoError> {
-    secp256r1_verify_signature(pubkey, &signed_msg.msg, &signed_msg.signature)
+    let msg_bytes = serde_json::to_vec(&signed_msg.msg).unwrap();
+    secp256r1_verify_signature(pubkey, &msg_bytes, &signed_msg.signature)
 }
 
-pub fn secp256r1_verify_signature(
+pub fn secp256r1_verify_signature (
     pubkey: &Secp256r1PublicKey,
     msg: &[u8],
     signature: &Secp256r1Signature,

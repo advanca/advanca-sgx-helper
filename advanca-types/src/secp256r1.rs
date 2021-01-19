@@ -72,8 +72,8 @@ pub struct Secp256r1Signature {
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone)]
-pub struct Secp256r1SignedMsg {
-    pub msg: Vec<u8>,
+pub struct Secp256r1SignedMsg<T: Serialize> {
+    pub msg: T,
     pub signature: Secp256r1Signature,
 }
 
@@ -216,6 +216,13 @@ impl From<sgx_ec256_private_t> for Secp256r1PrivateKey {
 }
 
 #[cfg(not(feature = "substrate"))]
+impl From<Secp256r1PrivateKey> for sgx_ec256_private_t {
+    fn from(item: Secp256r1PrivateKey) -> Self {
+        item.to_sgx_ec256_private()
+    }
+}
+
+#[cfg(not(feature = "substrate"))]
 impl From<sgx_ec256_public_t> for Secp256r1PublicKey {
     fn from(item: sgx_ec256_public_t) -> Self {
         Secp256r1PublicKey::from_sgx_ec256_public(&item)
@@ -223,9 +230,23 @@ impl From<sgx_ec256_public_t> for Secp256r1PublicKey {
 }
 
 #[cfg(not(feature = "substrate"))]
+impl From<Secp256r1PublicKey> for sgx_ec256_public_t {
+    fn from(item: Secp256r1PublicKey) -> Self {
+        item.to_sgx_ec256_public()
+    }
+}
+
+#[cfg(not(feature = "substrate"))]
 impl From<sgx_ec256_signature_t> for Secp256r1Signature {
     fn from(item: sgx_ec256_signature_t) -> Self {
         Secp256r1Signature::from_sgx_ec256_signature(item)
+    }
+}
+
+#[cfg(not(feature = "substrate"))]
+impl From<Secp256r1Signature> for sgx_ec256_signature_t {
+    fn from(item: Secp256r1Signature) -> Self {
+        item.to_sgx_ec256_signature()
     }
 }
 

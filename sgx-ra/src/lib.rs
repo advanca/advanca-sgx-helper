@@ -172,14 +172,14 @@ mod sgx_ra {
         debug!("{:02x?}", &gb_ga[96..128]);
 
         let aas_prvkey = &session.svr_ecdsa_key;
-        let sign_gb_ga = secp256r1_sign_msg(&aas_prvkey, &gb_ga).unwrap();
+        let sign_gb_ga = secp256r1_sign_bytes(&aas_prvkey, &gb_ga).unwrap();
 
         let mut p_msg2 = sgx_ra_msg2_t::default();
         p_msg2.g_b = g_b.to_sgx_ec256_public();
         p_msg2.spid.id = session.spid;
         p_msg2.quote_type = 1_u16;
         p_msg2.kdf_id = 1_u16;
-        p_msg2.sign_gb_ga = sign_gb_ga.signature.to_sgx_ec256_signature();
+        p_msg2.sign_gb_ga = sign_gb_ga.into();
 
         // the mac is an aes-128 cmac over the p_msg2 structure from g_b till sign_gb_ga
         // using smk as the key
