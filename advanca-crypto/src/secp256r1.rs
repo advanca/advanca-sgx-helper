@@ -8,7 +8,7 @@ use serde_sgx as serde;
 #[cfg(feature = "sgx_enclave")]
 use serde_json_sgx as serde_json;
 
-use serde::{Serialize, Deserialize};
+use serde::{Serialize};
 
 use advanca_types::*;
 use sgx_types::*;

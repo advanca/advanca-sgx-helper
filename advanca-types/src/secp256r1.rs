@@ -32,8 +32,8 @@ use sp_std::prelude::*;
 #[cfg(not(feature = "substrate"))]
 use core::mem::transmute;
 
-#[cfg(not(feature = "substrate"))]
-use std::vec::Vec;
+//#[cfg(not(feature = "substrate"))]
+//use std::vec::Vec;
 
 #[cfg(not(feature = "substrate"))]
 use std::convert::From;
