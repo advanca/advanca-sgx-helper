@@ -23,8 +23,8 @@ use ring::signature::{self, Signature};
 #[cfg(feature = "substrate")]
 use sp_std::prelude::*;
 
-#[cfg(not(feature = "substrate"))]
-use std::vec::Vec;
+#[cfg(feature = "sgx_enclave")]
+use sgx_tstd::prelude::v1::*;
 
 big_array! { BigArray; }
 
@@ -76,6 +76,37 @@ pub struct AliveEvidence {
 pub struct AasTimestamp {
     pub timestamp: u64,
     pub data: Vec<u8>,
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct SgxRaMsg3Reply {
+    pub is_verified: bool,
+    pub tcb_update: Option<Vec<u8>>,
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
+pub struct SgxRaFinalizeRequest {
+    pub signed_claiminfo: Sr25519SignedMsg<ProviderClaimInfo>,
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Copy)]
+pub struct ProviderClaimInfo {
+    pub geode_pubkey: Sr25519PublicKey,
+    pub provider_pubkey: Sr25519PublicKey,
+}
+
+#[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
+#[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
+#[derive(Default, Clone, Serialize, Deserialize)]
+struct AttestorInfo {
+    uri: String,
+    secp256r1_pubkey: Secp256r1PublicKey,
 }
 
 impl AasRegRequest {
