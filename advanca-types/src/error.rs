@@ -5,6 +5,9 @@ use serde_sgx as serde;
 #[cfg(feature = "substrate")]
 use serde_substrate as serde;
 
+#[cfg(feature = "substrate")]
+use sp_std::prelude::*;
+
 use serde::{Deserialize, Serialize};
 
 use core::fmt;

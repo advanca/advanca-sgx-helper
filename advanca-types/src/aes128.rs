@@ -18,11 +18,8 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "substrate")]
 use sp_std::prelude::*;
 
-#[cfg(not(feature = "substrate"))]
-use std::vec::Vec;
-
-#[cfg(not(feature = "substrate"))]
-use std::convert::From;
+#[cfg(feature = "sgx_enclave")]
+use sgx_tstd::prelude::v1::*;
 
 big_array! { BigArray; }
 

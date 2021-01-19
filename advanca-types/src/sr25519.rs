@@ -23,8 +23,8 @@ use core::fmt;
 #[cfg(feature = "substrate")]
 use sp_std::prelude::*;
 
-#[cfg(not(feature = "substrate"))]
-use std::vec::Vec;
+#[cfg(feature = "sgx_enclave")]
+use sgx_tstd::prelude::v1::*;
 
 big_array! { BigArray; }
 
