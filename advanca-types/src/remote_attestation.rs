@@ -105,8 +105,8 @@ pub struct ProviderClaimInfo {
 #[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct AttestorInfo {
-    uri: String,
-    secp256r1_pubkey: Secp256r1PublicKey,
+    pub uri: String,
+    pub secp256r1_pubkey: Secp256r1PublicKey,
 }
 
 impl AasRegRequest {
