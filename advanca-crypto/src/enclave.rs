@@ -1,8 +1,7 @@
-
 use sgx_types::*;
 
-use advanca_types::*;
 use advanca_macros::handle_sgx;
+use advanca_types::*;
 
 #[allow(dead_code)]
 pub fn enclave_get_sk_key(ra_context: sgx_ra_context_t) -> Result<Aes128Key, CryptoError> {
@@ -16,4 +15,3 @@ pub fn enclave_get_sk_key(ra_context: sgx_ra_context_t) -> Result<Aes128Key, Cry
     };
     Ok(Aes128Key { key: key })
 }
-

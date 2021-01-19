@@ -4,16 +4,16 @@ use serde;
 use serde_json;
 
 #[cfg(feature = "sgx_enclave")]
-use serde_sgx as serde;
-#[cfg(feature = "sgx_enclave")]
 use serde_json_sgx as serde_json;
+#[cfg(feature = "sgx_enclave")]
+use serde_sgx as serde;
 
-use serde::{Serialize};
+use serde::Serialize;
 
+use crate::aes128::*;
+use advanca_macros::handle_sgx;
 use advanca_types::*;
 use sgx_types::*;
-use advanca_macros::handle_sgx;
-use crate::aes128::*;
 
 pub fn secp256r1_gen_keypair() -> Result<(Secp256r1PrivateKey, Secp256r1PublicKey), CryptoError> {
     // generate secp256r1 keypair for communication with worker
@@ -81,7 +81,7 @@ pub fn secp256r1_sign_msg<T: Serialize + Clone>(
     })
 }
 
-pub fn secp256r1_sign_bytes (
+pub fn secp256r1_sign_bytes(
     prvkey: &Secp256r1PrivateKey,
     msg: &[u8],
 ) -> Result<Secp256r1Signature, CryptoError> {
@@ -112,7 +112,7 @@ pub fn secp256r1_verify_msg<T: Serialize>(
     secp256r1_verify_signature(pubkey, &msg_bytes, &signed_msg.signature)
 }
 
-pub fn secp256r1_verify_signature (
+pub fn secp256r1_verify_signature(
     pubkey: &Secp256r1PublicKey,
     msg: &[u8],
     signature: &Secp256r1Signature,
@@ -144,4 +144,3 @@ pub fn secp256r1_verify_signature (
         ),
     }
 }
-

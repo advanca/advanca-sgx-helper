@@ -1,7 +1,6 @@
-
-use advanca_types::*;
 use crate::aes128::*;
 use crate::secp256r1::*;
+use advanca_types::*;
 
 pub fn aas_verify_reg_request(
     key: &Aes128Key,

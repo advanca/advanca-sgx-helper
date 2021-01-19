@@ -8,14 +8,13 @@ use sgx_tcrypto as intel_crypto;
 #[cfg(feature = "sgx_enclave")]
 use sgx_types::sgx_read_rand;
 
-use advanca_types::*;
 use advanca_macros::handle_sgx;
+use advanca_types::*;
 use intel_crypto::*;
 
 use sgx_types::*;
 
 use std::vec::Vec;
-
 
 pub fn aes128cmac_mac(p_key: &Aes128Key, p_data: &[u8]) -> Result<Aes128Mac, CryptoError> {
     match rsgx_rijndael128_cmac_slice(&p_key.key, p_data) {
@@ -74,4 +73,3 @@ pub fn aes128gcm_decrypt(
 
     Ok(plaintext)
 }
-

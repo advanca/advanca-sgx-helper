@@ -68,4 +68,3 @@ pub fn sr25519_verify_signature(
         .verify(context.bytes(msg), &schnorrkel_signature)
         .is_ok())
 }
-
