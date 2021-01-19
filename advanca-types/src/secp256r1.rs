@@ -249,4 +249,3 @@ impl From<Secp256r1Signature> for sgx_ec256_signature_t {
         item.to_sgx_ec256_signature()
     }
 }
-

@@ -19,15 +19,15 @@
 extern crate sgx_tstd as std;
 
 mod aes128;
-mod sr25519;
-mod secp256r1;
-mod secp256k1;
-mod remote_attestation;
 mod error;
+mod remote_attestation;
+mod secp256k1;
+mod secp256r1;
+mod sr25519;
 
 pub use aes128::*;
-pub use sr25519::*;
-pub use secp256r1::*;
-pub use secp256k1::*;
-pub use remote_attestation::*;
 pub use error::*;
+pub use remote_attestation::*;
+pub use secp256k1::*;
+pub use secp256r1::*;
+pub use sr25519::*;

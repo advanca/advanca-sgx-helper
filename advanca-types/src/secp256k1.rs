@@ -83,10 +83,7 @@ impl From<rust_secp256k1::key::PublicKey> for Secp256k1PublicKey {
         y.copy_from_slice(&serialized_bytes[33..64]);
         y.reverse();
 
-        Secp256k1PublicKey {
-            gx: x,
-            gy: y,
-        }
+        Secp256k1PublicKey { gx: x, gy: y }
     }
 }
 
@@ -96,12 +93,10 @@ impl From<rust_secp256k1::key::SecretKey> for Secp256k1PrivateKey {
         let prvkey_ptr = item.as_ptr();
         let prvkey_len = item.len();
         assert_eq!(prvkey_len, 32);
-        let prvkey_slice = unsafe {core::slice::from_raw_parts(prvkey_ptr, prvkey_len)};
+        let prvkey_slice = unsafe { core::slice::from_raw_parts(prvkey_ptr, prvkey_len) };
         let mut prvkey = [0_u8; 32];
         prvkey.copy_from_slice(prvkey_slice);
-        Secp256k1PrivateKey {
-            r: prvkey,
-        }
+        Secp256k1PrivateKey { r: prvkey }
     }
 }
 
@@ -130,10 +125,7 @@ impl From<rust_secp256k1::Signature> for Secp256k1Signature {
         r.reverse();
         s.reverse();
 
-        Secp256k1Signature {
-            r: r,
-            s: s,
-        }
+        Secp256k1Signature { r: r, s: s }
     }
 }
 

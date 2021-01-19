@@ -26,7 +26,6 @@ use std::convert::From;
 
 big_array! { BigArray; }
 
-
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
 #[derive(
@@ -78,4 +77,3 @@ impl From<[u8; 16]> for Aes128Key {
         Aes128Key { key: item }
     }
 }
-

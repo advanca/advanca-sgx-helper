@@ -138,4 +138,3 @@ impl fmt::Debug for Sr25519Signature {
         self.signature_bytes[..].fmt(f)
     }
 }
-

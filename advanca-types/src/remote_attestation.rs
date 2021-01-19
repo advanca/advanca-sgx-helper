@@ -28,9 +28,9 @@ use std::vec::Vec;
 
 big_array! { BigArray; }
 
+use crate::aes128::*;
 use crate::secp256r1::*;
 use crate::sr25519::*;
-use crate::aes128::*;
 
 #[cfg_attr(feature = "sgx_enclave", serde(crate = "serde_sgx"))]
 #[cfg_attr(feature = "substrate", serde(crate = "serde_substrate"))]
@@ -117,4 +117,3 @@ impl AasRegReport {
         bytes
     }
 }
-
