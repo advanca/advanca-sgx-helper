@@ -18,7 +18,6 @@ pub mod ias;
 // but it will make the usage pattern more complicated
 pub use crate::sgx_ra::*;
 
-
 mod sgx_ra {
     use core::mem::{size_of, transmute};
     use log::debug;
@@ -79,8 +78,6 @@ mod sgx_ra {
             self.session_key.smk
         }
     }
-
-
 
     /// Derive SMK, SK, MK, and VK according to
     /// https://software.intel.com/en-us/articles/code-sample-intel-software-guard-extensions-remote-attestation-end-to-end-example

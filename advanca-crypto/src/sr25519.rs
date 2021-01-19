@@ -1,4 +1,16 @@
 #[cfg(feature = "std_env")]
+use serde;
+#[cfg(feature = "std_env")]
+use serde_json;
+
+#[cfg(feature = "sgx_enclave")]
+use serde_json_sgx as serde_json;
+#[cfg(feature = "sgx_enclave")]
+use serde_sgx as serde;
+
+use serde::Serialize;
+
+#[cfg(feature = "std_env")]
 use sgx_ucrypto::sgx_read_rand;
 
 #[cfg(feature = "sgx_enclave")]
@@ -31,11 +43,11 @@ pub fn sr25519_gen_keypair() -> Result<(Sr25519PrivateKey, Sr25519PublicKey), Cr
 pub fn sr25519_sign_msg<T: Serialize>(
     prvkey: &Sr25519PrivateKey,
     msg: T,
-) -> Result<Sr25519SignedMsg, CryptoError> {
+) -> Result<Sr25519SignedMsg<T>, CryptoError> {
     let msg_bytes = serde_json::to_vec(&msg).unwrap();
     let signature = sr25519_sign_bytes(prvkey, &msg_bytes)?;
     Ok(Sr25519SignedMsg {
-        msg: msg.to_vec(),
+        msg: msg,
         signature: signature,
     })
 }
@@ -58,10 +70,9 @@ pub fn sr25519_sign_bytes(
     Ok(signature.into())
 }
 
-
-pub fn sr25519_verify_msg(
+pub fn sr25519_verify_msg<T: Serialize>(
     pubkey: &Sr25519PublicKey,
-    signed_msg: &Sr25519SignedMsg,
+    signed_msg: &Sr25519SignedMsg<T>,
 ) -> Result<bool, CryptoError> {
     let msg_bytes = serde_json::to_vec(&signed_msg.msg).unwrap();
     sr25519_verify_signature(pubkey, &msg_bytes, &signed_msg.signature)
