@@ -183,3 +183,11 @@ impl From<Sr25519PrivateKey> for sp_core::sr25519::Pair {
         secret_key.into()
     }
 }
+
+impl From<sp_core::sr25519::Pair> for Sr25519PrivateKey {
+    fn from(item: sp_core::sr25519::Pair) -> Self {
+        let secret_key_bytes = item.to_raw_vec();
+        let secret_key = SecretKey::from_bytes(&secret_key_bytes).unwrap();
+        secret_key.into()
+    }
+}
