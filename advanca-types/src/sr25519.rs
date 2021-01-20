@@ -18,6 +18,8 @@ use serde::{Deserialize, Serialize};
 use schnorrkel::keys::{PublicKey, SecretKey};
 use schnorrkel::sign::Signature;
 
+use sp_core::Pair;
+
 use core::fmt;
 
 #[cfg(feature = "substrate")]
@@ -172,5 +174,12 @@ impl From<Sr25519Signature> for Signature {
 impl From<Signature> for Sr25519Signature {
     fn from(item: Signature) -> Self {
         Sr25519Signature::from_schnorrkel_signature(&item)
+    }
+}
+
+impl From<Sr25519PrivateKey> for sp_core::sr25519::Pair {
+    fn from(item: Sr25519PrivateKey) -> Self {
+        let secret_key: SecretKey = item.into();
+        secret_key.to_keypair()
     }
 }
