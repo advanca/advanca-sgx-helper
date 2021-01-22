@@ -15,6 +15,8 @@ use serde_substrate as serde;
 
 use serde::{Deserialize, Serialize};
 
+use core::fmt;
+
 #[cfg(feature = "openssl_support")]
 use openssl::ec::EcKey;
 
@@ -249,3 +251,27 @@ impl From<Secp256r1Signature> for sgx_ec256_signature_t {
         item.to_sgx_ec256_signature()
     }
 }
+
+impl fmt::Display for Secp256r1PrivateKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Secp256r1PrivateKey\n").unwrap();
+        write!(f, "r: {}\n", hex::encode(self.r))
+    }
+}
+
+impl fmt::Display for Secp256r1PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Secp256r1PublicKey\n").unwrap();
+        write!(f, "gx: {}\n", hex::encode(self.gx)).unwrap();
+        write!(f, "gy: {}\n", hex::encode(self.gy))
+    }
+}
+
+impl fmt::Display for Secp256r1Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Secp256r1Signature\n").unwrap();
+        write!(f, "x: {}\n", hex::encode(self.x)).unwrap();
+        write!(f, "y: {}\n", hex::encode(self.y))
+    }
+}
+

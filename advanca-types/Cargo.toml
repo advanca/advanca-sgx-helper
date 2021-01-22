@@ -46,4 +46,6 @@ schnorrkel            = { version = "0.9.1", default-features = false }
 curve25519-dalek      = { version = "2.1.0", default-features = false, features = ["u64_backend"]}
 rust-secp256k1        = { version = "0.20", default-features = false, package = "secp256k1" }
 
+hex                   = "0.4"
+
 # [target.'cfg(not(features = "enclave"))'.dependencies]

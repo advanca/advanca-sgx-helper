@@ -146,6 +146,21 @@ impl fmt::Debug for Sr25519Signature {
     }
 }
 
+impl fmt::Display for Sr25519PrivateKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Sr25519PrivateKey\n").unwrap();
+        write!(f, "secret: {}\n", hex::encode(self.secret)).unwrap();
+        write!(f, "nonce : {}\n", hex::encode(self.nonce))
+    }
+}
+
+impl fmt::Display for Sr25519PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Sr25519PublicKey\n").unwrap();
+        write!(f, "compressed_point: {}\n", hex::encode(self.compressed_point))
+    }
+}
+
 impl From<Sr25519PrivateKey> for SecretKey {
     fn from(item: Sr25519PrivateKey) -> Self {
         item.to_schnorrkel_private()

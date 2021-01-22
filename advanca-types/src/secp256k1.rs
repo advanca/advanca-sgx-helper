@@ -15,6 +15,8 @@ use serde_substrate as serde;
 
 use serde::{Deserialize, Serialize};
 
+use core::fmt;
+
 #[cfg(feature = "substrate")]
 use sp_std::prelude::*;
 
@@ -75,9 +77,9 @@ impl From<rust_secp256k1::key::PublicKey> for Secp256k1PublicKey {
         assert_eq!(serialized_bytes[0], 0x4);
 
         // values are in big-endian
-        x.copy_from_slice(&serialized_bytes[1..32]);
+        x.copy_from_slice(&serialized_bytes[1..=32]);
         x.reverse();
-        y.copy_from_slice(&serialized_bytes[33..64]);
+        y.copy_from_slice(&serialized_bytes[33..=64]);
         y.reverse();
 
         Secp256k1PublicKey { gx: x, gy: y }
@@ -138,3 +140,27 @@ impl From<Secp256k1Signature> for rust_secp256k1::Signature {
         rust_secp256k1::Signature::from_compact(&serialized_bytes).unwrap()
     }
 }
+
+impl fmt::Display for Secp256k1PrivateKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Secp256k1PrivateKey\n").unwrap();
+        write!(f, "r: {}\n", hex::encode(self.r))
+    }
+}
+
+impl fmt::Display for Secp256k1PublicKey {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Secp256k1PublicKey\n").unwrap();
+        write!(f, "gx: {}\n", hex::encode(self.gx)).unwrap();
+        write!(f, "gy: {}\n", hex::encode(self.gy))
+    }
+}
+
+impl fmt::Display for Secp256k1Signature {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Secp256k1Signature\n").unwrap();
+        write!(f, "r: {}\n", hex::encode(self.r)).unwrap();
+        write!(f, "s: {}\n", hex::encode(self.s))
+    }
+}
+
