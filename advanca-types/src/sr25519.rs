@@ -15,7 +15,7 @@ use serde_substrate as serde;
 
 use serde::{Deserialize, Serialize};
 
-use schnorrkel::keys::{PublicKey, SecretKey, Keypair};
+use schnorrkel::keys::{Keypair, PublicKey, SecretKey};
 use schnorrkel::sign::Signature;
 
 use sp_core::Pair;
@@ -157,7 +157,11 @@ impl fmt::Display for Sr25519PrivateKey {
 impl fmt::Display for Sr25519PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Sr25519PublicKey\n").unwrap();
-        write!(f, "compressed_point: {}\n", hex::encode(self.compressed_point))
+        write!(
+            f,
+            "compressed_point: {}\n",
+            hex::encode(self.compressed_point)
+        )
     }
 }
 
@@ -208,15 +212,15 @@ impl From<sp_core::sr25519::Public> for Sr25519PublicKey {
         let mut data = [0_u8; 32];
         data.copy_from_slice(item.as_array_ref());
         Sr25519PublicKey {
-            compressed_point: data
+            compressed_point: data,
         }
     }
 }
 
 impl From<[u8; 32]> for Sr25519PublicKey {
-    fn from(item: [u8;32]) -> Self {
+    fn from(item: [u8; 32]) -> Self {
         Sr25519PublicKey {
-            compressed_point: item
+            compressed_point: item,
         }
     }
 }
@@ -234,7 +238,6 @@ impl From<Sr25519PublicKey> for sp_core::crypto::AccountId32 {
         sp_core::sr25519::Public(item.compressed_point).into()
     }
 }
-
 
 impl From<Sr25519PrivateKey> for sp_core::sr25519::Pair {
     fn from(item: Sr25519PrivateKey) -> Self {

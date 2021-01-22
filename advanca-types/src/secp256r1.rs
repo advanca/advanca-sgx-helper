@@ -274,4 +274,3 @@ impl fmt::Display for Secp256r1Signature {
         write!(f, "y: {}\n", hex::encode(self.y))
     }
 }
-

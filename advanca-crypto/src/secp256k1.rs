@@ -1,12 +1,11 @@
-#[cfg(feature = "std_env")]
-use sgx_ucrypto::sgx_read_rand;
 #[cfg(feature = "sgx_enclave")]
 use sgx_types::sgx_read_rand;
+#[cfg(feature = "std_env")]
+use sgx_ucrypto::sgx_read_rand;
 
 use advanca_types::*;
 
 use sgx_types::*;
-
 
 #[cfg(feature = "sgx_enclave")]
 use std::vec::Vec;
@@ -14,10 +13,10 @@ use std::vec::Vec;
 // use rand::rngs::StdRng;
 // use rand::SeedableRng;
 
-use tiny_keccak::{Keccak, Hasher};
+use tiny_keccak::{Hasher, Keccak};
 
-use rust_secp256k1::{Secp256k1, SecretKey, PublicKey, Message};
 use rust_secp256k1::ffi::types::AlignedType;
+use rust_secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
 
 use advanca_macros::handle_sgx;
 
@@ -72,4 +71,3 @@ pub fn secp256k1_sign_msg(
         signature: signature.into(),
     })
 }
-

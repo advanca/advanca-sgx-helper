@@ -163,4 +163,3 @@ impl fmt::Display for Secp256k1Signature {
         write!(f, "s: {}\n", hex::encode(self.s))
     }
 }
-
