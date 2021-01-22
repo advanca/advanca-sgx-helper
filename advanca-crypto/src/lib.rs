@@ -22,14 +22,14 @@ extern crate sgx_tstd as std;
 extern crate sgx_ucrypto;
 
 mod secp256r1;
-//mod secp256k1;
+mod secp256k1;
 mod aes128;
 mod enclave;
 mod remote_attestation;
 mod sr25519;
 
 pub use secp256r1::*;
-//pub use secp256k1::*;
+pub use secp256k1::*;
 pub use aes128::*;
 pub use remote_attestation::*;
 pub use sr25519::*;

@@ -1,24 +1,19 @@
 #[cfg(feature = "std_env")]
-use sgx_ucrypto as intel_crypto;
-#[cfg(feature = "std_env")]
 use sgx_ucrypto::sgx_read_rand;
-
-#[cfg(feature = "sgx_enclave")]
-use sgx_tcrypto as intel_crypto;
 #[cfg(feature = "sgx_enclave")]
 use sgx_types::sgx_read_rand;
 
 use advanca_types::*;
-use intel_crypto::*;
 
 use sgx_types::*;
 
+
+#[cfg(feature = "sgx_enclave")]
 use std::vec::Vec;
 
-use rand::rngs::StdRng;
-use rand::SeedableRng;
+// use rand::rngs::StdRng;
+// use rand::SeedableRng;
 
-use schnorrkel;
 use tiny_keccak::{Keccak, Hasher};
 
 use rust_secp256k1::{Secp256k1, SecretKey, PublicKey, Message};
