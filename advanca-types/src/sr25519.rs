@@ -213,6 +213,22 @@ impl From<sp_core::sr25519::Public> for Sr25519PublicKey {
     }
 }
 
+impl From<[u8; 32]> for Sr25519PublicKey {
+    fn from(item: [u8;32]) -> Self {
+        Sr25519PublicKey {
+            compressed_point: item
+        }
+    }
+}
+
+impl From<Vec<u8>> for Sr25519PublicKey {
+    fn from(item: Vec<u8>) -> Self {
+        let mut data = [0_u8; 32];
+        data.copy_from_slice(&item);
+        data.into()
+    }
+}
+
 impl From<Sr25519PublicKey> for sp_core::crypto::AccountId32 {
     fn from(item: Sr25519PublicKey) -> Self {
         sp_core::sr25519::Public(item.compressed_point).into()
