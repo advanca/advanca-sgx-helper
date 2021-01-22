@@ -107,6 +107,11 @@ impl Sr25519PrivateKey {
         bytes[32..].copy_from_slice(&self.nonce);
         bytes
     }
+
+    pub fn gen_public(&self) -> Sr25519PublicKey {
+        let secret_key: SecretKey = self.clone().into();
+        secret_key.to_public().into()
+    }
 }
 
 impl Sr25519Signature {
